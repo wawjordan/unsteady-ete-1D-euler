@@ -1,0 +1,115 @@
+module test_roe_flux
+
+  use set_precision,   only : prec
+  use fluid_constants, only : gamma
+  use set_inputs, only : i_low, i_high, ig_low, ig_high
+  use flux_calc, only : flux_fun, select_flux
+  use pfunit_mod
+
+  implicit none
+
+  real(prec), parameter :: toler = 1.0e-13_prec
+
+  contains
+
+  @test
+    subroutine roe_flux_wall_test
+      
+      use set_inputs, only : flux_scheme
+      
+      real(prec), dimension(0:2,3) :: U
+      real(prec), dimension(1,3) :: F_expected
+      real(prec), dimension(0:1,3) :: F
+      
+      flux_scheme = 3
+      call select_flux()
+      
+      i_low = 1
+      ig_low = 0
+      i_high = 1
+      ig_high = 2
+      
+      U(0,1) = 1.225_prec
+      U(0,2) = 0.0_prec
+      U(0,3) = 253312.5_prec
+
+      U(1,1) = 1.225_prec
+      U(1,2) = 0.0_prec
+      U(1,3) = 253312.5_prec
+      
+      U(2,1) = 1.225_prec
+      U(2,2) = 0.0_prec
+      U(2,3) = 253312.5_prec
+
+      F_expected(1,1) = 0.0_prec
+      F_expected(1,2) = 101325.0_prec
+      F_expected(1,3) = 0.0_prec
+      
+      call flux_fun(U(0:1,1:3),U(1:2,1:3),F)
+      
+      write(*,*)
+      write(*,*) 'zero velocity test case (Roe):'
+      write(*,*) 'F(1)     = ', F(0,1)
+      write(*,*) 'F_exp(1) = ', F_expected(1,1)
+      @assertequal(F_expected(1,1), F(0,1), toler)
+      write(*,*) 'F(2)     = ', F(0,2)
+      write(*,*) 'F_exp(2) = ', F_expected(1,2)
+      @assertequal(1.0_prec, F(0,2)/F_expected(1,2), toler)
+      write(*,*) 'F(3)     = ', F(0,3)
+      write(*,*) 'F_exp(3) = ', F_expected(1,3)
+      @assertequal(F_expected(1,3), F(0,3), toler)
+      write(*,*) 'toler    = ', toler
+      
+    end subroutine roe_flux_wall_test
+  
+  @test
+    subroutine roe_flux_supersonic_test
+      
+      use set_inputs, only : flux_scheme
+      
+      real(prec), dimension(0:2,3) :: U
+      real(prec), dimension(1,3) :: F_expected
+      real(prec), dimension(0:1,3) :: F
+      
+      flux_scheme = 3
+      call select_flux()
+      
+      i_low = 1
+      ig_low = 0
+      i_high = 1
+      ig_high = 2
+      
+      U(0,1) = 1.225_prec
+      U(0,2) = 510.6536695593_prec
+      U(0,3) = 917035.5796875_prec
+
+      U(1,1) = 1.225_prec
+      U(1,2) = 510.6536695593_prec
+      U(1,3) = 917035.5796875_prec
+      
+      U(2,1) = 1.225_prec
+      U(2,2) = 510.6536695593_prec
+      U(2,3) = 917035.5796875_prec
+      
+      F_expected(1,1) = 510.6536695593_prec
+      F_expected(1,2) = 537111.1593750_prec
+      F_expected(1,3) = 517438309.9606_prec
+
+      call flux_fun(U(0:1,:),U(1:2,:),F)
+
+      write(*,*)
+      write(*,*) 'supersonic test case (Roe):'
+      write(*,*) 'F(1)     = ', F(0,1)
+      write(*,*) 'F_exp(1) = ', F_expected(1,1)
+      @assertequal(1.0_prec, F(0,1)/F_expected(1,1), toler)
+      write(*,*) 'F(2)     = ', F(0,2)
+      write(*,*) 'F_exp(2) = ', F_expected(1,2)
+      @assertequal(1.0_prec, F(0,2)/F_expected(1,2), toler)
+      write(*,*) 'F(3)     = ', F(0,3)
+      write(*,*) 'F_exp(3) = ', F_expected(1,3)
+      @assertequal(1.0_prec, F(0,3)/F_expected(1,3), toler)
+      write(*,*) 'toler    = ', toler
+      
+    end subroutine roe_flux_supersonic_test
+
+end module test_roe_flux

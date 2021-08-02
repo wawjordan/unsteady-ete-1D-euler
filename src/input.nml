@@ -1,0 +1,44 @@
+&grid
+  imax = 256
+  xmin = -1.0
+  xmax =  1.0
+  n_ghost_cells = 2
+/
+
+&geometry
+  Astar = 0.2
+/
+
+&constants
+  gamma = 1.4
+/
+
+&initial
+  p0 = 300.0
+  T0 = 600.0
+  p_ratio = 0.4
+  shock = 0
+/
+
+&numerical
+  CFL = 0.1
+  max_iter = 500
+/
+
+&flux
+  flux_scheme = 2
+  limiter_scheme = 2
+  beta_lim = 2.0
+/
+
+&output
+  soln_save = 1
+  res_save = 1
+  res_out  = 100
+  cons     = T
+/
+
+&reconstruction
+  epsM = 1.0
+  kappaM = -1.0
+/

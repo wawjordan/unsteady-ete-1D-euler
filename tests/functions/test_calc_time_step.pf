@@ -1,0 +1,66 @@
+module test_calc_time_step
+  
+  use set_precision,    only : prec
+  use fluid_constants,  only : gamma
+  use time_integration, only : calc_time_step
+  use set_inputs,       only : CFL, i_low,i_high,ig_low,ig_high
+  use pfunit_mod
+  
+  implicit none
+  
+  real(prec), parameter :: toler = 1.0e-14_prec
+  
+  contains
+  
+  @test
+    subroutine calc_time_step_test
+      
+      real(prec), dimension(2) :: dt_expected
+      real(prec), dimension(2)   :: lambda_expected
+      real(prec), dimension(2,3) :: V
+      real(prec) :: dx
+      real(prec), dimension(2) :: dt, lambda, asnd
+      
+      i_low = 1
+      ig_low = 1
+      i_high = 2
+      ig_high = 2
+      CFL = 1.0_prec
+      dx     = 0.066666666666667_prec
+      V(1,1) = 1.225_prec
+      V(1,2) = 340.29399054347107_prec
+      V(1,3) = 101325.0_prec
+      
+      V(2,1) = 1.225_prec
+      V(2,2) = 0.0_prec
+      V(2,3) = 101325.0_prec
+      
+      asnd(1) = 340.29399054347107_prec
+      asnd(2) = 340.29399054347107_prec
+      
+      lambda_expected(1) = 680.58798108694214_prec 
+      lambda_expected(2) = 340.29399054347107_prec
+      
+      dt_expected(1)     = 9.7954516564039e-05_prec
+      dt_expected(2)     = 0.00019590903312808_prec
+      
+      call calc_time_step(dx,V,asnd,lambda,dt)
+      
+      write(*,*)
+      write(*,*) 'lambda(1)     = ', lambda(1)
+      write(*,*) 'lambda_exp(1) = ', lambda_expected(1)
+      @assertequal(1.0_prec,lambda(1)/lambda_expected(1),toler)
+      write(*,*) 'lambda(2)     = ', lambda(2)
+      write(*,*) 'lambda_exp(2) = ', lambda_expected(2)
+      @assertequal(1.0_prec,lambda(2)/lambda_expected(2),toler)
+      write(*,*) 'dt(1)         = ', dt(1)
+      write(*,*) 'dt_exp(1)     = ', dt_expected(1)
+      @assertequal(1.0_prec,dt(1)/dt_expected(1),toler)
+      write(*,*) 'dt(2)         = ', dt(2)
+      write(*,*) 'dt_exp(2)     = ', dt_expected(2)
+      @assertequal(1.0_prec,dt(2)/dt_expected(2),toler)
+      write(*,*) 'toler         = ', toler
+      
+    end subroutine calc_time_step_test
+
+end module test_calc_time_step
