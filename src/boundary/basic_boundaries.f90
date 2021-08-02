@@ -1,10 +1,12 @@
 module basic_boundaries
 
   use set_precision, only : prec
-  use set_constants, only : one, two
+  use set_constants, only : zero, one, two
   use set_inputs,    only : imax, neq, eps, i_low, i_high, ig_low, ig_high
-  use variable_conversion, only : prim2cons, cons2prim, isentropic_relations, &
-                                  update_mach
+  use variable_conversion, only : prim2cons, cons2prim, riem2prim, &
+                                  speed_of_sound, isentropic_relations, &
+                                  update_mach, riemann_1, riemann_2, riemann_3
+  use soln_type, only : soln_t
 
   implicit none
 
@@ -15,6 +17,52 @@ module basic_boundaries
   public :: enforce_bndry
 
 contains
+
+  subroutine explicit_characteristic_bndry(soln, Vspec)
+    type(soln_t), intent(inout) :: soln
+    real(prec), dimension(neq), intent(in) :: Vspec
+    real(prec) :: rho, uvel, avel, pres
+    real(prec) :: rho_ghost, uvel_ghost, avel_ghost, pres_ghost
+    real(prec) :: Rp_ghost, Rm_ghost, R0_ghost
+    real(prec), dimension(2) :: tmp
+    logical :: flag
+
+
+    ! Left boundary
+    rho  = soln%V(i_low,1)
+    uvel = soln%V(i_low,2)
+    pres = soln%V(i_low,3)
+    avel = soln%asnd(i_low)
+
+    if ( uvel < zero ) then ! inflow
+      flag = .false.
+    else ! outflow
+      flag = .false.
+    end if
+
+    if ( uvel >= avel ) then ! supersonic
+      flag = .false.
+    else ! subsonic
+      flag = .false.
+    end if
+
+    ! left subsonic inflow
+    R0_ghost = riemann_1(rho,pres)
+    Rp_ghost = riemann_2(rho,uvel,avel)
+    tmp(1) = riemann_3(soln%V(i_low+1,1),soln%V(i_low+1,2),soln%asnd(i_low+1))
+    tmp(2) = riemann_3(soln%V(i_low+2,1),soln%V(i_low+2,2),soln%asnd(i_low+2))
+    Rm_ghost = two*tmp(1) - tmp(2)
+
+    call riem2prim(Rp_ghost,Rm_ghost,R0_ghost, &
+            rho_ghost,uvel_ghost,avel_ghost,pres_ghost)
+
+    soln%V(i_low-1,:) = (/ rho_ghost, uvel_ghost, pres_ghost /)
+    soln%asnd(i_low-1) = avel_ghost
+
+
+  end subroutine explicit_characteristic_bndry
+
+
 
   subroutine sub_in_bndry( M, U, V )
 
