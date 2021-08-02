@@ -1,14 +1,49 @@
 module variable_conversion
 
   use set_precision,   only : prec
-  use set_constants,   only : one, half
+  use set_constants,   only : one, two, half, fourth
   use fluid_constants, only : gamma, R_gas
   use set_inputs,      only : p0,T0, neq, ig_low, ig_high
   use soln_type,       only : soln_t
 
   implicit none
 
+  private
+
+  public :: riemann_1, riemann_2, riemann_3, riem2prim, &
+            update_states, update_mach, speed_of_sound, &
+            prim2cons, cons2prim, limit_primitives, isentropic_relations
+
   contains
+
+  elemental function riemann_1(rho, pres)
+    real(prec) :: riemann_1
+    real(prec), intent(in) :: rho, pres
+    riemann_1 = pres/rho**gamma
+  end function riemann_1
+
+  elemental function riemann_2(rho, uvel, avel)
+    real(prec) :: riemann_2
+    real(prec), intent(in) :: rho, uvel, avel
+    riemann_2 = uvel + two*avel/(gamma - one)
+  end function riemann_2
+
+  elemental function riemann_3(rho, uvel, avel)
+    real(prec) :: riemann_3
+    real(prec), intent(in) :: rho, uvel, avel
+    riemann_3 = uvel - two*avel/(gamma - one)
+  end function riemann_3
+
+  elemental subroutine riem2prim(R_plus, R_minus, R_zero, rho, uvel, avel, pres)
+    real(prec), intent(in) :: R_plus, R_minus, R_zero
+    real(prec), intent(out) :: rho, uvel, avel, pres
+
+    uvel = half*(R_plus + R_minus)
+    avel = fourth*(gamma-one)*(R_plus - R_minus)
+    rho = ( avel**2/(gamma*R_zero) )**( one/(gamma - one) )
+    pres = rho*avel**2/gamma
+  end subroutine riem2prim
+
 
 
   !============================== update_states  =============================80
