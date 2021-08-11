@@ -77,14 +77,14 @@ module exact_soln_type
       real(prec), intent(in) :: t
       real(prec) :: xlocs(5)
       integer :: xmsk(5)
-      call sample_riemann(this%uStar, this%pStar, &
-               this%left_state, this%right_state, &
-               grid%xc, &
-               t,newton_tol,this%Vq,xlocs,xmsk)
-      !call cell_avg_riemann(this%uStar, this%pStar, &
+      !call sample_riemann(this%uStar, this%pStar, &
       !         this%left_state, this%right_state, &
-      !         grid%xi(i_low-1:i_high), &
+      !         grid%xc, &
       !         t,newton_tol,this%Vq,xlocs,xmsk)
+      call cell_avg_riemann(this%uStar, this%pStar, &
+               this%left_state, this%right_state, &
+               grid%xi, &
+               t,newton_tol,this%Vq,xlocs,xmsk)
     end subroutine sample_exact_soln
 
     !======================== destroy_exact_soln =============================80
