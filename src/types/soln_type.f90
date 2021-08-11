@@ -35,10 +35,6 @@ module soln_type
   !============================= allocate_soln ===============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      soln :
-  !!
-  !! Outputs:     soln :
   !<
   !===========================================================================80
   subroutine allocate_soln( soln )
@@ -86,10 +82,6 @@ module soln_type
   !=========================== deallocate_soln ===============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      soln :
-  !!
-  !! Outputs:     soln :
   !<
   !===========================================================================80
   subroutine deallocate_soln( soln )
