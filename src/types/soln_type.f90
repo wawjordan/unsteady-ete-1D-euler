@@ -4,11 +4,11 @@ module soln_type
   use set_constants, only : zero, one
   use set_inputs,    only : i_low, i_high, ig_low, ig_high
   use set_inputs,    only : neq, max_iter, shock
-  
+
   implicit none
 
   type soln_t
-    
+
     real(prec), allocatable, dimension(:,:) :: V
     real(prec), allocatable, dimension(:,:) :: U
     real(prec), allocatable, dimension(:,:) :: R
@@ -25,25 +25,26 @@ module soln_type
     real(prec), allocatable, dimension(:)   :: rnorm
     real(prec), allocatable, dimension(:)   :: rold
     real(prec), allocatable, dimension(:)   :: rinit
-    
+    real(prec) :: time
+
   end type soln_t
 
   contains
-  
-  
+
+
   !============================= allocate_soln ===============================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      soln : 
+  !! Inputs:      soln :
   !!
-  !! Outputs:     soln : 
+  !! Outputs:     soln :
   !<
   !===========================================================================80
   subroutine allocate_soln( soln )
 
     type(soln_t), intent(inout) :: soln
-    
+
     allocate( soln%V( ig_low:ig_high, neq ), &
               soln%U( ig_low:ig_high, neq ), &
               soln%R( i_low:i_high,   neq ), &
@@ -58,14 +59,14 @@ module soln_type
               soln%rnorm( 1:neq ),        &
               soln%rold( 1:neq ),        &
               soln%rinit( 1:neq ) )
-    
+
     if (shock.eq.0) then
       allocate( soln%DE( i_low:i_high, neq ), &
                 soln%DEnorm( 1:neq )  )
       soln%DE = zero
       soln%DE = zero
     end if
-    
+
     soln%V   = zero
     soln%U   = zero
     soln%R   = zero
@@ -81,24 +82,26 @@ module soln_type
     soln%rold = zero
     soln%rinit = zero
 
+    soln%time = zero
+
   end subroutine allocate_soln
-  
-  
+
+
   !=========================== deallocate_soln ===============================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      soln : 
+  !! Inputs:      soln :
   !!
-  !! Outputs:     soln : 
+  !! Outputs:     soln :
   !<
   !===========================================================================80
   subroutine deallocate_soln( soln )
-  
+
     implicit none
-    
+
     type(soln_t), intent(inout) :: soln
-    
+
     deallocate(soln%V,      &
                soln%U,      &
                soln%R,      &
@@ -113,11 +116,11 @@ module soln_type
                soln%rnorm,  &
                soln%rold,  &
                soln%rinit  )
-    
+
     if (shock.eq.0) then
       deallocate( soln%DE, soln%DEnorm )
     end if
-    
+
   end subroutine deallocate_soln
 
 end module soln_type
