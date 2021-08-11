@@ -8,7 +8,6 @@ program main_program
   use set_inputs, only : limiter_freeze, res_out, cons
   use variable_conversion
   use time_integration
-!  use basic_boundaries, only : enforce_bndry
   use basic_boundaries, only : explicit_characteristic_bndry
   use limiter_calc, only : select_limiter
   use flux_calc, only : select_flux, flux_fun
@@ -56,26 +55,20 @@ program main_program
   call output_soln(grid,soln,ex_soln,0)
 
   call explicit_characteristic_bndry(soln, VL, VR)
-  !call enforce_bndry( soln )
-  !call prim2cons(soln%U,soln%V)
   call update_states( soln )
   call calculate_sources(soln%V(:,3),grid%dAc,soln%src)
   call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
 
-  if (flux_scheme==1) then
-    call flux_fun(soln%U(i_low-1:i_high,:),soln%U(i_low:i_high+1,:),soln%F)
-    call jst_damping(soln%lambda,soln%U,soln%V,soln%D)
-    soln%F = soln%F + soln%D
-  else
-    call MUSCL_extrap( soln%V, leftV, rightV )
-    call prim2cons(leftU,leftV)
-    call prim2cons(rightU,rightV)
-    call flux_fun(leftU,rightU,soln%F)
-  end if
+  call MUSCL_extrap( soln%V, leftV, rightV )
+  call prim2cons(leftU,leftV)
+  call prim2cons(rightU,rightV)
+  call flux_fun(leftU,rightU,soln%F)
 
   call explicit_euler(grid,soln%src,soln%dt,soln%F,soln%U,soln%R)
   call update_states( soln )
-  !soln%time = soln%time + minval(soln%dt)
+
+  soln%time = soln%time + minval(soln%dt)
+
   call sample_exact_soln(ex_soln,grid,soln%time)
 
   call output_soln(grid,soln,ex_soln,1)
@@ -93,24 +86,14 @@ program main_program
   do j = 2,max_iter
 
     call explicit_characteristic_bndry(soln, VL, VR)
-    !call enforce_bndry( soln )
-    !call prim2cons(soln%U,soln%V)
     call update_states( soln )
-    !call calculate_sources(soln%V(:,3),grid%dAc,soln%src)
+    call calculate_sources(soln%V(:,3),grid%dAc,soln%src)
     call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
 
-    !if (flux_scheme==1) then
-    !  call flux_fun(soln%U(i_low-1:i_high,:),soln%U(i_low:i_high+1,:),soln%F)
-    !  call jst_damping(soln%lambda,soln%U,soln%V,soln%D)
-    !  soln%F = soln%F + soln%D
-    !else
-      call MUSCL_extrap( soln%V, leftV, rightV )
-      call prim2cons(leftU,leftV)
-      call prim2cons(rightU,rightV)
-      !call enforce_bndry( soln )
-      call flux_fun(leftU,rightU,soln%F)
-    !end if
-    !call enforce_bndry( soln )
+    call MUSCL_extrap( soln%V, leftV, rightV )
+    call prim2cons(leftU,leftV)
+    call prim2cons(rightU,rightV)
+    call flux_fun(leftU,rightU,soln%F)
 
     call explicit_euler(grid,soln%src,soln%dt,soln%F,soln%U,soln%R)
     call update_states( soln )
@@ -119,9 +102,7 @@ program main_program
     call sample_exact_soln(ex_soln,grid,soln%time)
 
     if (mod(j,soln_save)==0) then
-      if (shock.eq.0) then
-        call calc_de( soln, ex_soln, soln%DE, soln%DEnorm, pnorm, cons )
-      end if
+      call calc_de( soln, ex_soln, soln%DE, soln%DEnorm, pnorm, cons )
       call output_soln(grid,soln,ex_soln,j)
     end if
 
@@ -131,11 +112,6 @@ program main_program
       exit
     elseif (any(soln%rnorm>soln%rold)) then
         limiter_freeze = .true.
-      !if (limiter_freeze) then
-      !  limiter_freeze = .false.
-      !else
-      !  limiter_freeze = .true.
-      !end if
     end if
     soln%rold = soln%rnorm
     if (mod(j,10*res_out)==0) then
