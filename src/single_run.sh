@@ -10,11 +10,11 @@ limiter_str=""
 #if [ -f $summary ]; then
 #  rm -f "$summary"
 #fi
-imax=256 #16 32 64 128 256 512
+imax=250 #16 32 64 128 256 512
 p0=300.0
 T0=600.0
 prat=0.4 #0.1 0.5 0.6
-flux=2
+flux=3
 limiter=2
 beta_lim=2.0
 shock=0 #0 1
@@ -24,11 +24,11 @@ eps_MUSCL=1.0
 kappa_MUSCL=-1.0
 k2=0.5 #0.5 0.4 0.3 0.25
 k4=0.03125 #0.03125 0.02 0.015625 
-maxk=500
-Sout=1
+maxk=1000
+Sout=4
 Rout=1
 disp_out=100
-cons=T
+cons=F
 if [ $shock -eq 0 ]; then
   shock_str="isentropic"
 else
@@ -68,7 +68,7 @@ echo "  n_ghost_cells = 2" >> $input
 echo "/" >> $input
 echo "" >> $input
 echo "&geometry" >> $input
-echo "  Astar = 0.2" >> $input
+echo "  areaStar = 0.2" >> $input
 echo "/" >> $input
 echo "" >> $input
 echo "&constants" >> $input
