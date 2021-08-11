@@ -1,0 +1,182 @@
+module exact_soln_type
+
+  use set_precision      , only : prec
+  use set_constants      , only : zero, one, two, half
+  use fluid_constants    , only : R_gas, gamma
+  use set_inputs         , only : imax, neq, n_ghost_cells, eps
+  use set_inputs         , only : max_newton_iter, newton_tol, i_low, i_high
+  use variable_conversion, only : isentropic_relations, prim2cons
+  use riemann_problem    , only : init_bracket, solve_riemann
+  use grid_type
+
+  implicit none
+
+  private
+
+  public :: exact_soln_t
+
+!============================== exact_soln_t =================================80
+!>
+!! Description: Derived type for analytic solutions.
+!<
+!=============================================================================80
+  type, abstract, public :: exact_soln_t
+
+    real(prec), allocatable, dimension(:)   :: aq ! speed of sound
+    real(prec), allocatable, dimension(:)   :: Mq ! Mach #
+    real(prec), allocatable, dimension(:)   :: Tq ! Temperature
+    real(prec), allocatable, dimension(:,:) :: Vq ! (rho,u,p)^T
+    real(prec), allocatable, dimension(:) :: left_state, right_state
+    real(prec) :: pStar, uStar, aStar, areaStar
+
+  contains
+
+    procedure, public, pass :: destroy_exact_soln
+    procedure(setup_exact_soln_i),   public, pass, deferred :: setup_exact_soln
+    procedure(solve_exact_soln_i),   public, pass, deferred :: solve_exact_soln
+    procedure(sample_exact_soln_i),  public, pass, deferred :: sample_exact_soln
+
+  end type exact_soln_t
+
+  abstract interface
+
+    !========================= setup_exact_soln_i ============================80
+    !>
+    !! Description: Sets up exact_soln_t type.
+    !<
+    !=========================================================================80
+    subroutine setup_exact_soln_i(this, grid)
+
+      use grid_type,     only : grid_t
+
+      import exact_soln_t
+
+      class(exact_soln_t), intent(inout) :: this
+      type(grid_t)       , intent(in) :: grid
+
+    end subroutine setup_exact_soln_i
+
+    !========================== solve_exact_soln_i ===========================80
+    !>
+    !! Description: Interface for subroutine to solve for exact solution.
+    !<
+    !=========================================================================80
+    subroutine solve_exact_soln_i(this,grid)
+
+      use grid_type,     only : grid_t
+
+      import exact_soln_t
+
+      implicit none
+
+      class(exact_soln_t), intent(inout) :: this
+      type(grid_t), intent(in) :: grid
+
+    end subroutine solve_exact_soln_i
+
+    !========================== sample_exact_soln_i ==========================80
+    !>
+    !! Description: Interface for subroutine to sample exact solution values.
+    !<
+    !=========================================================================80
+    subroutine sample_exact_soln_i(this,grid,t)
+
+      use set_precision, only : prec
+      use grid_type,     only : grid_t
+
+      import exact_soln_t
+
+      implicit none
+
+      class(exact_soln_t), intent(inout) :: this
+      type(grid_t), intent(in) :: grid
+      real(prec), intent(in) :: t
+
+    end subroutine sample_exact_soln_i
+
+    !========================= destroy_exact_soln_i ==========================80
+    !>
+    !! Description: Deallocates exact_soln_t type.
+    !<
+    !=========================================================================80
+    subroutine destroy_exact_soln_i(this)
+
+      import exact_soln_t
+
+      class(exact_soln_t), intent(inout) :: this
+
+    end subroutine destroy_exact_soln_i
+
+  end interface
+
+  contains
+
+    subroutine select_exact_soln()
+      use set_inputs, only : exactSolution
+
+
+
+
+
+    !========================= setup_exact_soln ==============================80
+    !>
+    !! Description: Sets up exact_soln_t type.
+    !<
+    !=========================================================================80
+    subroutine setup_exact_soln( this, grid )
+
+      use set_constants, only : zero, one
+      use riemann_problem, only : solve_riemann
+
+      class(exact_soln_t), intent(inout) :: this
+      type(grid_t), intent(in) :: grid
+
+      allocate( this%aq(i_low-1:i_high), &
+                this%Mq(i_low-1:i_high), &
+                this%Tq(i_low-1:i_high), &
+                this%Vq(i_low-1:i_high,neq) )
+      this%aq = zero
+      this%Mq = zero
+      this%Tq = zero
+      this%Vq = zero
+
+      this%pStar = one
+      this%uStar = one
+      this%aStar = one
+      this%areaStar = one
+      this%left_state  = (/ one, one, one /)
+      this%right_state = (/ one, one, one /)
+
+      !this%solve_exact_soln => solve_riemann_problem
+
+    end subroutine setup_exact_soln
+
+    !======================== destroy_exact_soln =============================80
+    !>
+    !! Description: Deallocates exact_soln_t type.
+    !<
+    !=========================================================================80
+    subroutine destroy_exact_soln( this )
+
+      class(exact_soln_t) :: this
+
+      deallocate( this%aq, this%Mq, this%Tq, this%Vq )
+
+    end subroutine destroy_exact_soln
+
+    subroutine solve_riemann_problem( this, grid )
+
+      class(exact_soln_t), intent(inout) :: this
+      type(grid_t), intent(in) :: grid
+      real(prec) :: p0, bnd_a, bnd_b
+      integer :: i
+
+     ! call init_bracket( this%left_state, this%right_state, &
+     !                    1.0e-6_prec, p0, bnd_a, bnd_b )
+     ! call solve_riemann( p0, bnd_a, bnd_b, newton_tol, max_newton_iter, &
+     !                    this%left_state, this%right_state, this%pStar,  &
+     !                    this%uStar )
+
+    end subroutine solve_riemann_problem
+
+end module exact_soln_type
