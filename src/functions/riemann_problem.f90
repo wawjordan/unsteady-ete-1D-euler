@@ -12,7 +12,7 @@ module riemann_problem
 
   private
 
-  public :: solve_riemann_problem, sample_riemann_problem
+  public :: solve_riemann, sample_riemann, cell_avg_riemann, init_bracket
 
 contains
 
@@ -134,7 +134,7 @@ subroutine pressure_function( pres, U_K, f_out )
     p0 = p03
   end subroutine init_bracket
 
-  subroutine solve_riemann_problem(p0,a,b,tol,max_iter,U_L,U_R,pStar,uStar)
+  subroutine solve_riemann(p0,a,b,tol,max_iter,U_L,U_R,pStar,uStar)
 
     real(prec), intent(in)  :: p0, a, b, tol
     real(prec), intent(in)  :: U_L(:), U_R(:)
@@ -173,9 +173,9 @@ subroutine pressure_function( pres, U_K, f_out )
       df = df1 + df2
     end function df
 
-  end subroutine solve_riemann_problem
+  end subroutine solve_riemann
 
-  subroutine sample_riemann_problem(uStar,pStar,U_L,U_R,x,t,tol,U,xlocs,xmsk)
+  subroutine sample_riemann(uStar,pStar,U_L,U_R,x,t,tol,U,xlocs,xmsk)
     real(prec), intent(in)  :: uStar, pStar, t, tol
     real(prec), intent(in)  :: U_L(:), U_R(:)
     real(prec), intent(in)  :: x(:)
@@ -200,7 +200,7 @@ subroutine pressure_function( pres, U_K, f_out )
     n = size(x,1)
     t2 = t
     t2 = max(tol,t2)
-    xoffset = half*(maxval(x)-minval(x))
+    xoffset = zero !half*(maxval(x)-minval(x))
     S = x/t2
 
     xmsk  = 0
@@ -293,9 +293,9 @@ subroutine pressure_function( pres, U_K, f_out )
                       pres_in_fan_R(pres_R,uvel_R,avel_R,x(i),t) /)
     end if
 
-  end subroutine sample_riemann_problem
+  end subroutine sample_riemann
 
-  subroutine cell_avg_riemann_problem(uStar,pStar,U_L,U_R,x,t,tol,U,xlocs,xmsk)
+  subroutine cell_avg_riemann(uStar,pStar,U_L,U_R,x,t,tol,U,xlocs,xmsk)
     real(prec), intent(in)  :: uStar, pStar, t, tol
     real(prec), intent(in)  :: U_L(:), U_R(:)
     real(prec), intent(in)  :: x(:)
@@ -322,7 +322,7 @@ subroutine pressure_function( pres, U_K, f_out )
     n = size(x,1)
     t2 = t
     t2 = max(tol,t2)
-    xoffset = half*(maxval(x)-minval(x))
+    xoffset = zero !half*(maxval(x)-minval(x))
     S = x/t2
     IU = zero
 
@@ -465,9 +465,19 @@ subroutine pressure_function( pres, U_K, f_out )
       end if
     end do
 
+
+    !write(*,*) lbound(U,1), ubound(U,1)
+    !write(*,*) lbound(IU,1), ubound(IU,1)
+    !write(*,*) lbound(x,1), ubound(x,1)
+
+    !stop
+
     do i = 1,n-1
       U(i,:) = ( IU(i+1,:) - IU(i,:) )/( x(i+1) - x(i) )
     end do
+    !do i = 1,n-1
+    !  U(i,:) = ( IU(i+1,:) - IU(i,:) )/( x(i+1) - x(i) )
+    !end do
 
     do i = 1,5
       U(ilocs(i),:) = ( U_L2(i,:) - IU(ilocs(i),:)  + &
@@ -477,7 +487,7 @@ subroutine pressure_function( pres, U_K, f_out )
 
     xlocs = xlocs + xoffset
 
-  end subroutine cell_avg_riemann_problem
+  end subroutine cell_avg_riemann
 
   elemental function rho_in_fan_L(rho_L,uvel_L,avel_L,x,t)
     real(prec) :: rho_in_fan_L
