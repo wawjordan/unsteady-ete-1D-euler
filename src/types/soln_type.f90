@@ -3,7 +3,7 @@ module soln_type
   use set_precision, only : prec
   use set_constants, only : zero, one
   use set_inputs,    only : i_low, i_high, ig_low, ig_high
-  use set_inputs,    only : neq, max_iter, shock
+  use set_inputs,    only : neq, max_iter
 
   implicit none
 
@@ -50,39 +50,35 @@ module soln_type
               soln%R( i_low:i_high,   neq ), &
               soln%F( i_low-1:i_high, neq ), &
               soln%D( i_low-1:i_high, neq ), &
-              soln%asnd( ig_low:ig_high ),      &
-              soln%mach( ig_low:ig_high ),      &
-              soln%temp( ig_low:ig_high ),      &
+              soln%asnd( ig_low:ig_high ),   &
+              soln%mach( ig_low:ig_high ),   &
+              soln%temp( ig_low:ig_high ),   &
               soln%src( i_low:i_high ),      &
-              soln%dt( i_low:i_high ),     &
+              soln%dt( i_low:i_high ),       &
               soln%lambda( ig_low:ig_high ), &
-              soln%rnorm( 1:neq ),        &
-              soln%rold( 1:neq ),        &
+              soln%rnorm( 1:neq ),           &
+              soln%rold( 1:neq ),            &
+              soln%DE( i_low:i_high, neq ),  &
+              soln%DEnorm(1:neq ),           &
               soln%rinit( 1:neq ) )
 
-    if (shock.eq.0) then
-      allocate( soln%DE( i_low:i_high, neq ), &
-                soln%DEnorm( 1:neq )  )
-      soln%DE = zero
-      soln%DE = zero
-    end if
-
-    soln%V   = zero
-    soln%U   = zero
-    soln%R   = zero
-    soln%F   = zero
-    soln%D   = zero
+    soln%V      = zero
+    soln%U      = zero
+    soln%R      = zero
+    soln%F      = zero
+    soln%D      = zero
     soln%asnd   = zero
     soln%mach   = zero
     soln%temp   = zero
-    soln%src   = zero
-    soln%dt  = zero
+    soln%src    = zero
+    soln%dt     = zero
     soln%lambda = zero
-    soln%rnorm = zero
-    soln%rold = zero
-    soln%rinit = zero
-
-    soln%time = zero
+    soln%rnorm  = zero
+    soln%rold   = zero
+    soln%rinit  = zero
+    soln%DE     = zero
+    soln%DE     = zero
+    soln%time   = zero
 
   end subroutine allocate_soln
 
@@ -107,19 +103,17 @@ module soln_type
                soln%R,      &
                soln%F,      &
                soln%D,      &
-               soln%asnd,      &
-               soln%mach,      &
-               soln%temp,      &
-               soln%src,      &
+               soln%asnd,   &
+               soln%mach,   &
+               soln%temp,   &
+               soln%src,    &
                soln%dt,     &
                soln%lambda, &
                soln%rnorm,  &
-               soln%rold,  &
-               soln%rinit  )
-
-    if (shock.eq.0) then
-      deallocate( soln%DE, soln%DEnorm )
-    end if
+               soln%rold,   &
+               soln%rinit,  &
+               soln%DE,     &
+               soln%DEnorm  )
 
   end subroutine deallocate_soln
 
