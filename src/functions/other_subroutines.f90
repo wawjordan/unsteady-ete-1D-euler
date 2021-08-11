@@ -183,6 +183,17 @@ module other_subroutines
     end select
 
     write (kappa_str, "(A2,I3.2,A1)") "_K"  , int(10*kappaM),"_"
+
+    !write(*,*) ncells_str
+    !write(*,*) CFL_str
+    !write(*,*) flux_str
+    !write(*,*) order_str
+    !write(*,*) limiter_str
+    !write(*,*) kappa_str
+    !stop
+
+
+
     write (dirname_hist, *) "/hist/"
     write (dirname_field, *) "/field/"
     write (filename,*)  trim(ncells_str)//  &
@@ -191,6 +202,8 @@ module other_subroutines
     &                   trim(limiter_str)// &
     &                   trim(kappa_str)//   &
     &                   trim(CFL_str)
+    !write(*,*) filename
+    !stop
 
     call execute_command_line ('mkdir -p ../results/hist/')
 
