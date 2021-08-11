@@ -1,5 +1,5 @@
 module other_subroutines
-  
+
   use set_precision, only : prec
   use set_constants, only : zero, one, two, three, half, fourth
   use set_inputs, only : imax, neq, i_low, i_high, ig_low, ig_high, shock
@@ -8,45 +8,45 @@ module other_subroutines
   use variable_conversion
   use limiter_calc, only : limiter_fun, calc_consecutive_variations
   use soln_type, only : soln_t
-  use exact_q1d_type, only : exact_q1d_t
+  use exact_soln_type, only : exact_soln_t
   use grid_type, only : grid_t
-  
+
   implicit none
-  
+
   contains
-  
+
   !============================= calculate_sources ===========================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      V  : 
-  !!              dA : 
+  !! Inputs:      V  :
+  !!              dA :
   !!
-  !! Outputs:     S  : 
+  !! Outputs:     S  :
   !<
   !===========================================================================80
   subroutine calculate_sources(P,dA,S)
-    
+
     real(prec), dimension(i_low:i_high),   intent(in) :: dA
     real(prec), dimension(ig_low:ig_high),   intent(in) :: P
     real(prec), dimension(i_low:i_high),   intent(out) :: S
-    
+
     S(i_low:i_high) = P(i_low:i_high)*dA(i_low:i_high)
-    
+
   end subroutine calculate_sources
-  
+
   !================================ MUSCL_extrap =============================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      V     : 
+  !! Inputs:      V     :
   !!
-  !! Outputs:     left  : 
+  !! Outputs:     left  :
   !!              right :
   !<
   !===========================================================================80
   subroutine MUSCL_extrap( V, left, right )
-    
+
     use set_inputs, only : limiter_freeze, psi_plus, psi_minus
     real(prec), dimension(ig_low:ig_high,neq), intent(in)  :: V
     real(prec), dimension(i_low-1:i_high,neq), intent(out) :: left, right
@@ -55,15 +55,16 @@ module other_subroutines
     real(prec), dimension(ig_low:ig_high,neq)  :: r_plus, r_minus
     !real(prec), dimension(neq) :: den
     integer :: i
-    
+
     !do i = i_low-1,i_high
-      !den = V(i+1,:) - V(i,:)
-      !den = sign(one,den)*max(abs(den),1e-6_prec)
-      !r_plus(i,:)   = ( V(i+2,:) - V(i+1,:) )/den
-      !r_minus(i,:)  = ( V(i,:) - V(i-1,:) )/den
-      !write(*,*) i, r_plus(i,1), r_plus(i,2), r_plus(i,3), &
-      !         &    r_minus(i,1),r_minus(i,2), r_minus(i,3)
+    !  den = V(i+1,:) - V(i,:)
+    !  den = sign(one,den)*max(abs(den),1e-6_prec)
+    !  r_plus(i,:)   = ( V(i+2,:) - V(i+1,:) )/den
+    !  r_minus(i,:)  = ( V(i,:) - V(i-1,:) )/den
+    !  write(*,*) i, r_plus(i,1), r_plus(i,2), r_plus(i,3), &
+    !           &    r_minus(i,1),r_minus(i,2), r_minus(i,3)
     !end do
+
     if (limiter_freeze) then
       continue
     else
@@ -71,7 +72,7 @@ module other_subroutines
       call limiter_fun(r_plus,psi_plus)
       call limiter_fun(r_minus,psi_minus)
     end if
-    
+
     do i = i_low-1,i_high
       left(i,:) = V(i,:) + fourth*epsM*( &
          & (one-kappaM)*psi_plus(i-1,:)*(V(i,:)-V(i-1,:)) + &
@@ -88,7 +89,7 @@ module other_subroutines
     !left(i_high,:)   = V(i_high,:)
     !right(i_low-1,:) = V(i_low,:)
     !right(i_high,:)  = V(i_high+1,:)
-    
+
     !left(i_low-1,:)  = V(i_low-1,:)
     !left(i_high,:)   = V(i_high,:)
     !right(i_low-1,:) = V(i_low-1,:)
@@ -101,23 +102,23 @@ module other_subroutines
     !end do
 
   end subroutine MUSCL_extrap
-  
-  
+
+
   !============================= jst_damping =================================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      lambda : 
-  !!              U      : 
+  !! Inputs:      lambda :
+  !!              U      :
   !!              V      :
   !!
-  !! Outputs:     d      : 
+  !! Outputs:     d      :
   !<
   !===========================================================================80
   subroutine jst_damping(lambda,U,V,d)
-    
+
     use set_inputs, only : k2, k4
-    
+
     real(prec), dimension(ig_low:ig_high),     intent(in) :: lambda
     real(prec), dimension(ig_low:ig_high,neq), intent(in) :: U,V
     real(prec), dimension(i_low-1:i_high,neq), intent(out) :: d
@@ -128,9 +129,9 @@ module other_subroutines
     real(prec), dimension(i_low-1:i_high) :: e4
     real(prec), dimension(ig_low:ig_high) :: nu
     real(prec), dimension(ig_low:ig_high) :: P
-    
+
     integer :: i
-    
+
     P(:) = V(:,3)
     lambda_half = half*(lambda(i_low:i_high+1) + lambda(i_low-1:i_high))
     do i = i_low-1,i_high
@@ -138,7 +139,7 @@ module other_subroutines
     end do
     nu(i_low-2)  = abs(2*nu(i_low-1) - nu(i_low))
     nu(i_high+1) = abs(2*nu(i_high) - nu(i_high-1))
-    
+
     do i = i_low-1,i_high
       !if (i == i_low-1) then
       !  e2(i) = k2*max(nu(i),nu(i+1),nu(i+2))
@@ -149,37 +150,37 @@ module other_subroutines
       !end if
       e4(i) = max(zero,k4-e2(i))
     end do
-    
+
     do i = i_low-1,i_high
       D1(i,:) = lambda_half(i)*e2(i)*(U(i+1,:)-U(i,:))
       D3(i,:) = lambda_half(i)*e4(i)* &
               & ( U(i+2,:) - three*U(i+1,:) + three*U(i,:) - U(i-1,:) )
     end do
-    
+
     d(:,:) = D3(:,:) - D1(:,:)
-    
+
     !d(i_low-1,:) = 2*d(i_low,:) - d(i_low+1,:)
     !d(i_high-1,:) = 2*d(i_high-2,:) - d(i_high-3,:)
     !d(i_high,:) = 2*d(i_high-1,:) - d(i_high-2,:)
 
   end subroutine jst_damping
-  
+
   !================================== calc_de ==== ===========================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      soln : 
-  !!              exact_soln : 
+  !! Inputs:      soln :
+  !!              exact_soln :
   !!              pnorm :
   !!
-  !! Outputs:     DE     : 
-  !!              DEnorm : 
+  !! Outputs:     DE     :
+  !!              DEnorm :
   !<
   !===========================================================================80
   subroutine calc_de( soln, exact_soln, DE, DEnorm, pnorm, cons )
-    
+
     type(soln_t), intent(inout) :: soln
-    type(exact_q1d_t), intent(in) :: exact_soln
+    type(exact_soln_t), intent(in) :: exact_soln
     logical, intent(in) :: cons
     real(prec), dimension(i_low:i_high,1:neq), intent(out) :: DE
     real(prec), dimension(1,1:neq), intent(out) :: DEnorm
@@ -187,11 +188,11 @@ module other_subroutines
     real(prec) :: Linv
     Linv = one/real(i_high-i_low)
     if (cons) then
-      DE = soln%U(i_low:i_high,1:neq) - exact_soln%Uc(i_low:i_high,1:neq)
+      DE = soln%U(i_low:i_high,1:neq) - exact_soln%Uq(i_low:i_high,1:neq)
     else
-      DE = soln%V(i_low:i_high,1:neq) - exact_soln%Vc(i_low:i_high,1:neq)
+      DE = soln%V(i_low:i_high,1:neq) - exact_soln%Vq(i_low:i_high,1:neq)
     end if
-    
+
     if (pnorm == 0) then
       DEnorm(1,1:neq) = maxval(abs(DE),1)
     elseif (pnorm == 1) then
@@ -207,24 +208,24 @@ module other_subroutines
       DEnorm(1,2) = maxval(abs(DE(:,2)))
       DEnorm(1,3) = maxval(abs(DE(:,3)))
     end if
-    
+
   end subroutine calc_de
 
   !========================== output_file_headers ============================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      grid     : 
-  !!              soln     : 
-  !!              num_iter : 
+  !! Inputs:      grid     :
+  !!              soln     :
+  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_file_headers
-    
+
     use set_inputs, only : imax, shock, p_ratio
     use set_inputs, only : flux_scheme, limiter_scheme, beta_lim
     use set_inputs, only : CFL, k2, k4, epsM
-    
+
     character(len=1024) :: dirname_hist
     character(len=1024) :: dirname_field
     character(len=1024) :: filename
@@ -237,7 +238,7 @@ module other_subroutines
     character(len=64) ::   kappa_str
     character(len=64) ::   kappa2_str
     character(len=64) ::   kappa4_str
-    
+
     ! Set up output directories
     write (ncells_str  , "(A1,I0.3,A1)") "N"  , imax   , "_"
     if (shock.eq.1) then
@@ -246,7 +247,7 @@ module other_subroutines
       write (shock_str, "(A10)") "isentropic"
     end if
     write (CFL_str  , "(A4,I0.3)") "CFL-", int(1000*cfl)
-    
+
     select case(flux_scheme)
     case(1)
       write (flux_str,"(A3)") "CTR"
@@ -261,7 +262,7 @@ module other_subroutines
     else
       write (order_str,"(A1)") "2"
     end if
-    
+
     select case(limiter_scheme)
     case(1)
       write (limiter_str,"(A3)") "_VL"
@@ -273,7 +274,7 @@ module other_subroutines
       write (limiter_str,"(A2,I0.2,A1)") "_B",int(10*beta_lim),"_"
     case default
     end select
-    
+
     write (kappa_str, "(A2,I3.2,A1)") "_K"  , int(10*kappaM),"_"
     write (kappa2_str, "(A4,I0.4)") "_K2-"  , int(1000*k2)
     write (kappa4_str, "(A4,I0.4)") "_K4-"  , int(1000*k4)
@@ -292,11 +293,11 @@ module other_subroutines
       &                   trim(limiter_str)// &
       &                   trim(kappa_str)//   &
       &                   trim(CFL_str)
-    end if 
-    
+    end if
+
     call execute_command_line ('mkdir -p ../results/' // &
     & adjustl(trim(dirname_hist)))
-    
+
     call execute_command_line ('mkdir -p ../results/' // &
     & adjustl(trim(dirname_field)))
     ! Set up output files (history and solution)
@@ -311,7 +312,7 @@ module other_subroutines
     else
       write(30,*) 'variables="Iteration""Res1""Res2""Res3"'
     end if
-    
+
     open(40,file= '../results/'//trim(adjustl(dirname_field))//  &
     &               trim(adjustl(filename))//'_field.dat',status='unknown')
     write(40,*) 'TITLE = "Q1D soln ('// &
@@ -341,29 +342,29 @@ module other_subroutines
       write(*,*) 'ERROR! shock must equal 0 or 1!!!'
       stop
     endif
-    
+
   end subroutine output_file_headers
-  
+
   !============================= output_soln =================================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      grid     : 
-  !!              soln     : 
-  !!              num_iter : 
+  !! Inputs:      grid     :
+  !!              soln     :
+  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_soln(grid,soln,ex_soln,num_iter)
-    
+
     use set_inputs, only : counter
-    
+
     type( grid_t ), intent(in) :: grid
     type( soln_t ), intent(in) :: soln
-    type( exact_q1d_t ), intent(in) :: ex_soln
+    type( exact_soln_t ), intent(in) :: ex_soln
     integer,        intent(in) :: num_iter
-    
+
     integer :: i
-    
+
     open(40,status='unknown')
     ! Repeat the following each time you want to write out the solution
     !write(40,*) 'zone T="',num_iter,'" '
@@ -379,8 +380,8 @@ module other_subroutines
       do i = i_low,i_high
         write(40,*) grid%xc(i),grid%Ac(i),soln%V(i,1),soln%V(i,2),soln%V(i,3),&
              & soln%mach(i),soln%U(i,1),soln%U(i,2),soln%U(i,3), &
-             & ex_soln%Mc(i), ex_soln%Vc(i,1), ex_soln%Vc(i,2),  &
-             & ex_soln%Vc(i,3), soln%DE(i,1), soln%DE(i,2), soln%DE(i,3)
+             & ex_soln%Mq(i), ex_soln%Vq(i,1), ex_soln%Vq(i,2),  &
+             & ex_soln%Vq(i,3), soln%DE(i,1), soln%DE(i,2), soln%DE(i,3)
         !write(40,*) grid%xc(i),soln%V(i,1),soln%V(i,2),soln%V(i,3),&
         !     & soln%mach(i), ex_soln%Mc(i), ex_soln%Vc(i,1), ex_soln%Vc(i,2),&
         !     & ex_soln%Vc(i,3)
@@ -397,20 +398,20 @@ module other_subroutines
              & soln%mach(i)
       end do
     endif
-    
+
   end subroutine output_soln
-  
+
   !============================= output_res ==================================80
   !>
-  !! Description: 
+  !! Description:
   !!
-  !! Inputs:      grid     : 
-  !!              soln     : 
-  !!              num_iter : 
+  !! Inputs:      grid     :
+  !!              soln     :
+  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_res(soln,num_iter)
-    
+
     !real(prec), dimension(neq), intent(in) :: rnorm
     type( soln_t), intent(in) :: soln
     integer, intent(in) :: num_iter
@@ -421,7 +422,7 @@ module other_subroutines
     else
       write(30,*) num_iter,(soln%rnorm(i),i=1,neq)
     end if
-    
+
   end subroutine output_res
-  
+
 end module other_subroutines
