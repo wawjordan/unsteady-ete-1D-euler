@@ -427,7 +427,7 @@ subroutine pressure_function( pres, U_K, f_out )
       call hunt(x,xlocs(i),ilocs(i))
     end do
 
-    write(*,*) ilocs
+    !write(*,*) ilocs
 
     do i = 1,5
       if (xmsk(i) == 0) then  ! no feature detected (left)
