@@ -3,7 +3,6 @@ input="input.nml"
 summary="../results/summary.dat"
 temp="temp.txt"
 start=`date +%s`
-shock_str=""
 flux_str=""
 limiter_str=""
 #touch $summary
@@ -13,36 +12,24 @@ limiter_str=""
 imax=250 #16 32 64 128 256 512
 p0=300.0
 T0=600.0
-prat=0.4 #0.1 0.5 0.6
 flux=3
 limiter=2
 beta_lim=2.0
-shock=0 #0 1
 cfl=0.1 #0.1 0.5 0.9
 eps_roe=0.05
 eps_MUSCL=1.0
 kappa_MUSCL=-1.0
-k2=0.5 #0.5 0.4 0.3 0.25
-k4=0.03125 #0.03125 0.02 0.015625 
 maxk=1000
 Sout=4
 Rout=1
 disp_out=100
 cons=F
-if [ $shock -eq 0 ]; then
-  shock_str="isentropic"
-else
-  shock_str="normal shock"
-fi
 if [ $flux -eq 1 ]; then
-  flux_str="central scheme"
-elif [ $flux -eq 2 ]; then
   flux_str="van Leer flux"
-elif [ $flux -eq 3 ]; then
+elif [ $flux -eq 2 ]; then
   flux_str="Roe's flux"
 fi
 
-if [ $flux -ne 1 ]; then
 if [ $limiter -eq 1 ]; then
   limiter_str="van Leer limiter"
 elif [ $limiter -eq 2 ]; then
@@ -52,12 +39,9 @@ elif [ $limiter -eq 3 ]; then
 elif [ $limiter -eq 4 ]; then
   limiter_str="beta ($beta_lim) limiter"
 fi
-fi
 echo ""
 echo "!==============================================================================!"
-echo "| N=$imax | $shock_str | P_rat=$prat "
-echo "--------------------------------------------------------------------------------"
-echo "| $flux_str | $limiter_str | CFL=$cfl "
+echo "| N = $imax | $flux_str | $limiter_str | CFL=$cfl "
 echo "!==============================================================================!"
 
 echo "&grid" > $input
@@ -78,8 +62,6 @@ echo "" >> $input
 echo "&initial" >> $input
 echo "  p0 = $p0" >> $input
 echo "  T0 = $T0" >> $input
-echo "  p_ratio = $prat" >> $input
-echo "  shock = $shock" >> $input
 echo "/" >> $input
 echo "" >> $input
 echo "&numerical" >> $input
