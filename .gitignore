@@ -34,6 +34,9 @@
 # Data Files
 *.dat
 
+# Namelists
+*.nml
+
 # Build Folders
 build/*
 results/*
