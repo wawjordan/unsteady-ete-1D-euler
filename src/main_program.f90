@@ -19,20 +19,65 @@ program main_program
   use soln_type
   use exact_soln_type, only : exact_soln_t, setup_exact_soln, &
            destroy_exact_soln, sample_exact_soln
+
+ ! use dns_matrix_derived_type, only : dns_matrix_t, allocate_dns_matrix
+
+ ! use iterative_solvers, only : gmres
   implicit none
+
 
   character(len=100) :: header_str1
   character(len=100) :: niter
-  integer :: j, pnorm
+  integer :: i, j, pnorm
   type( grid_t )      :: grid
   type( soln_t )      :: soln
   type( exact_soln_t ) :: ex_soln
   real(prec), dimension(3) :: VL, VR
+ ! type(dns_matrix_t) :: A_mat
+ ! real(prec), dimension(3,3) :: array1, array2
+ ! real(prec), dimension(3) :: b, x
+
+
+  !array1 = transpose(reshape((/8.,1.,6.,3.,5.,7.,4.,9.,2./),shape(array1)))
+  !array2 = one
+  !x = zero
+
+  !do i = 1,3
+  !  b(i) = real(i,prec)
+  !end do
+
   pnorm = 1
   j = 0
 
   VL = (/one,zero,one/)
   VR = (/0.125_prec,zero,0.1_prec/)
+
+  !call allocate_dns_matrix(A_mat,3)
+
+  !call A_mat%add_array(1,1,3,3,array1)
+
+  !call gmres(A_mat,b,x)
+
+  !call A_mat%extract_array((/1,1/),(/3,3/),array2)
+
+  !do i = 1,3
+  !  write(*,*) array2(i,1)
+  !end do
+  !write(*,*)
+  !do i = 1,3
+  !  write(*,*) b(i)
+  !end do
+  !write(*,*)
+  !do i = 1,3
+  !  write(*,*) x(i)
+  !end do
+
+
+  !call A_mat%destroy
+
+  !stop
+
+
 
   open(50,file='temp.txt',status='unknown')
 
