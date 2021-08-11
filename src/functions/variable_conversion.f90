@@ -49,10 +49,6 @@ module variable_conversion
   !============================== update_states  =============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      soln :
-  !!
-  !! Outputs:     soln :
   !<
   !===========================================================================80
   subroutine update_states( soln )
@@ -69,11 +65,6 @@ module variable_conversion
   !============================== speed_of_sound  ============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      pressure :
-  !!              rho      :
-  !!
-  !! Outputs:     sound_speed :
   !<
   !===========================================================================80
   elemental subroutine speed_of_sound( pressure, rho, sound_speed )
@@ -88,11 +79,6 @@ module variable_conversion
   !=============================== prim2cons =================================80
   !>
   !! Description:
-  !!
-  !! Inputs:      U :
-  !!
-  !! Outputs:     U :
-  !!              V :
   !<
   !===========================================================================80
   subroutine prim2cons( U, V )
@@ -109,11 +95,6 @@ module variable_conversion
   !================================ update_mach ==============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      V :
-  !!              M :
-  !!
-  !! Outputs:     M :
   !<
   !===========================================================================80
   subroutine update_mach( V, M )
@@ -132,12 +113,6 @@ module variable_conversion
   !=============================== cons2prim =================================80
   !>
   !! Description:
-  !!
-  !! Inputs:      U :
-  !!              V :
-  !!
-  !! Outputs:     U :
-  !!              V :
   !<
   !===========================================================================80
   subroutine cons2prim( U, V )
@@ -156,12 +131,6 @@ module variable_conversion
   !========================= limit_primitives ================================80
   !>
   !! Description:
-  !!
-  !! Inputs:      U :
-  !!              V :
-  !!
-  !! Outputs:     U :
-  !!              V :
   !<
   !===========================================================================80
   subroutine limit_primitives(V)
@@ -195,11 +164,6 @@ module variable_conversion
   !========================= isentropic_relations ============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      M :
-  !!              V :
-  !!
-  !! Outputs:     V :
   !<
   !===========================================================================80
   subroutine isentropic_relations(M,V)

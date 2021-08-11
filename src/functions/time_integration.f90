@@ -14,12 +14,6 @@ module time_integration
   !============================= calc_time_step ==============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      dx :
-  !!              V  :
-  !!
-  !! Outputs:     lambda :
-  !!              dt     :
   !<
   !===========================================================================80
   subroutine calc_time_step( dx, V, asnd, lambda, dt )
@@ -42,17 +36,6 @@ module time_integration
   !============================= explicit_euler ==============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid :
-  !!              S    :
-  !!              F    :
-  !!              dt   :
-  !!              U    :
-  !!
-  !! Outputs:     lambda :
-  !!              dt     :
-  !!              R      :
-  !!              U      :
   !<
   !===========================================================================80
 
@@ -91,10 +74,6 @@ module time_integration
   !============================= residual_norms ==============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      R :
-  !!
-  !! Outputs:     Rnorm :
   !<
   !===========================================================================80
   subroutine residual_norms( R, Rnorm, pnorm, rinit )
@@ -125,32 +104,4 @@ module time_integration
 
   end subroutine residual_norms
 
-!subroutine advance_solution(grid,soln)
-!
-!  type(grid_t) :: grid
-!  type(soln_t) :: soln
-!
-!  call calculate_time_step(soln%lambda,soln%dt,soln%V)
-!
-!  call enforce_bndry(soln)
-!
-!  call extrapolate_variables(soln%U,Uextrap,...)
-!
-!  call central_flux(Uextrap,Fextrap)
-!
-!  call jst_damping(soln%lambda,soln%D,soln%E,Fextrap,...)
-!
-!  call calculate_sources(soln%S,...)
-!
-!  call explicit_euler(grid,soln%S,soln%dt,Fextrap,soln%U,soln%R)
-!
-!  call cons2prim(soln%U,soln%V)
-!
-!  call isentropic_relations(soln%M,soln%V,soln%T) ! calc_mach_number?
-!
-!  call output_soln()
-!
-!  call enforce_bndry(soln)
-!
-!end subroutine advance_solution
 end module time_integration

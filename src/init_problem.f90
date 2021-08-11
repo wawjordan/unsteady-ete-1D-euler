@@ -18,12 +18,6 @@ module init_problem
   !================================ initialize  ==============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid :
-  !!              soln :
-  !!
-  !! Outputs:     grid :
-  !!              soln :
   !<
   !===========================================================================80
   subroutine initialize( grid, soln, U_L, U_R )

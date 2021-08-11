@@ -58,10 +58,6 @@ module set_inputs
   !=================================== area ==================================80
   !>
   !! Description: Calculates area distribution for nozzle.
-  !!
-  !! Inputs:      x:   Position coordinate along x-axis.
-  !!
-  !! Outputs:     area: Area at specified coordinate.
   !<
   !===========================================================================80
   function area(x)
@@ -76,10 +72,6 @@ module set_inputs
   !=================================== darea =================================80
   !>
   !! Description: Calculates area derivative distribution for nozzle.
-  !!
-  !! Inputs:      x:   Position coordinate along x-axis.
-  !!
-  !! Outputs:     darea: analytic dA/dx evaluated at specified coordinate.
   !<
   !===========================================================================80
   function darea(x)

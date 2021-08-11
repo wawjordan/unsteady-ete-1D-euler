@@ -18,11 +18,6 @@ module other_subroutines
   !============================= calculate_sources ===========================80
   !>
   !! Description:
-  !!
-  !! Inputs:      V  :
-  !!              dA :
-  !!
-  !! Outputs:     S  :
   !<
   !===========================================================================80
   subroutine calculate_sources(P,dA,S)
@@ -38,11 +33,6 @@ module other_subroutines
   !================================ MUSCL_extrap =============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      V     :
-  !!
-  !! Outputs:     left  :
-  !!              right :
   !<
   !===========================================================================80
   subroutine MUSCL_extrap( V, left, right )
@@ -106,13 +96,6 @@ module other_subroutines
   !================================== calc_de ==== ===========================80
   !>
   !! Description:
-  !!
-  !! Inputs:      soln :
-  !!              exact_soln :
-  !!              pnorm :
-  !!
-  !! Outputs:     DE     :
-  !!              DEnorm :
   !<
   !===========================================================================80
   subroutine calc_de( soln, exact_soln, DE, DEnorm, pnorm, cons )
@@ -152,10 +135,6 @@ module other_subroutines
   !========================== output_file_headers ============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid     :
-  !!              soln     :
-  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_file_headers
@@ -248,10 +227,6 @@ module other_subroutines
   !============================= output_soln =================================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid     :
-  !!              soln     :
-  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_soln(grid,soln,ex_soln,num_iter)
@@ -284,10 +259,6 @@ module other_subroutines
   !============================= output_res ==================================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid     :
-  !!              soln     :
-  !!              num_iter :
   !<
   !===========================================================================80
   subroutine output_res(soln,num_iter)

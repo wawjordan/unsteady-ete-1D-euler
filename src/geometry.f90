@@ -15,12 +15,6 @@ module geometry
   !============================= setup geometry  =============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid :
-  !!              soln :
-  !!
-  !! Outputs:     grid :
-  !!              soln :
   !<
   !===========================================================================80
   subroutine setup_geometry( grid, soln )
@@ -57,12 +51,6 @@ module geometry
   !========================== teardown geometry  =============================80
   !>
   !! Description:
-  !!
-  !! Inputs:      grid :
-  !!              soln :
-  !!
-  !! Outputs:     grid :
-  !!              soln :
   !<
   !===========================================================================80
   subroutine teardown_geometry( grid, soln )
