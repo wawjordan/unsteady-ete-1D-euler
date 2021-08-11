@@ -47,10 +47,8 @@ contains
     select case(flux_scheme)
 
     case(1)
-      flux_fun => central_flux
-    case(2)
       flux_fun => van_leer_flux
-    case(3)
+    case(2)
       flux_fun => roe_flux
     case default
 
