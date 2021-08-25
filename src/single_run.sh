@@ -9,18 +9,18 @@ limiter_str=""
 #if [ -f $summary ]; then
 #  rm -f "$summary"
 #fi
-imax=250 #16 32 64 128 256 512
+imax=512 #16 32 64 128 256 512
 p0=300.0
 T0=600.0
 flux=1
 limiter=2
 beta_lim=2.0
-cfl=0.1 #0.1 0.5 0.9
-eps_roe=0.05
+cfl=1.0 #0.1 0.5 0.9
+eps_roe=0.1
 eps_MUSCL=1.0
 kappa_MUSCL=-1.0
-maxk=1000
-Sout=4
+maxk=600
+Sout=16
 Rout=1
 disp_out=100
 cons=F
@@ -48,7 +48,7 @@ echo "&grid" > $input
 echo "  imax = $imax" >> $input
 echo "  xmin = -1.0" >> $input
 echo "  xmax =  1.0" >> $input
-echo "  n_ghost_cells = 2" >> $input
+echo "  n_ghost = 2" >> $input
 echo "/" >> $input
 echo "" >> $input
 echo "&geometry" >> $input
@@ -73,6 +73,7 @@ echo "&flux" >> $input
 echo "  flux_scheme = $flux" >> $input
 echo "  limiter_scheme = $limiter" >> $input
 echo "  beta_lim = $beta_lim" >> $input
+echo "  eps_roe = $eps_roe" >> $input
 echo "/" >> $input
 echo "" >> $input
 echo "&output" >> $input
