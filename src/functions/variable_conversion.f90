@@ -55,9 +55,10 @@ module variable_conversion
 
     type(soln_t) :: soln
     call cons2prim(soln%U,soln%V)
-    call speed_of_sound(soln%V(:,3),soln%V(:,1),soln%asnd)
+    call limit_primitives(soln%V)
+    call speed_of_sound(soln%V(3,:),soln%V(1,:),soln%asnd)
 
-    soln%mach = abs(soln%V(:,2))/soln%asnd
+    soln%mach = abs(soln%V(2,:))/soln%asnd
     soln%temp = T0/(one + half*(gamma - one)*soln%mach**2)
 
   end subroutine update_states
@@ -86,9 +87,9 @@ module variable_conversion
     real(prec), dimension(:,:), intent(out)  :: U
     real(prec), dimension(:,:), intent(in)   :: V
 
-    U(:,1) = V(:,1)
-    U(:,2) = V(:,1)*V(:,2)
-    U(:,3) = ( V(:,3)/(gamma - one) ) + half*V(:,1)*V(:,2)**2
+    U(1,:) = V(1,:)
+    U(2,:) = V(1,:)*V(2,:)
+    U(3,:) = ( V(3,:)/(gamma - one) ) + half*V(1,:)*V(2,:)**2
 
   end subroutine prim2cons
 
@@ -102,11 +103,11 @@ module variable_conversion
     real(prec), dimension(:,:),  intent(in) :: V
     real(prec), dimension(:), intent(inout) :: M
 
-    real(prec), dimension(lbound(V,1):ubound(V,1)) :: a
+    real(prec), dimension(lbound(V,2):ubound(V,2)) :: a
 
-    call speed_of_sound(V(:,3),V(:,1),a)
+    call speed_of_sound(V(3,:),V(1,:),a)
 
-    M = abs(V(:,2))/a
+    M = abs(V(2,:))/a
 
   end subroutine update_mach
 
@@ -120,9 +121,9 @@ module variable_conversion
     real(prec), dimension(:,:), intent(in) :: U
     real(prec), dimension(:,:), intent(out) :: V
 
-    V(:,1) = U(:,1)
-    V(:,2) = U(:,2)/U(:,1)
-    V(:,3) = (gamma - one)*U(:,3) - half*(gamma - one)*U(:,2)**2/U(:,1)
+    V(1,:) = U(1,:)
+    V(2,:) = U(2,:)/U(1,:)
+    V(3,:) = (gamma - one)*U(3,:) - half*(gamma - one)*U(2,:)**2/U(1,:)
 
     !call limit_primitives(U,V)
 
@@ -146,12 +147,12 @@ module variable_conversion
     !  mask = .true.
     !end where
 
-    do i = lbound(V,1),ubound(V,1)
-      if (V(i,1)<1.0e-5_prec) then
-        V(i,1) = 1.0e-5_prec
+    do i = lbound(V,2),ubound(V,2)
+      if (V(1,i)<1.0e-12_prec) then
+        V(1,i) = 1.0e-12_prec
       end if
-      if (V(i,3)<1.0e-5_prec) then
-        V(i,3) = 1.0e-5_prec
+      if (V(3,i)<1.0e-12_prec) then
+        V(3,i) = 1.0e-12_prec
       end if
       !if (mask(i)) then
       !  call prim2cons(U,V)
@@ -171,15 +172,15 @@ module variable_conversion
     real(prec), dimension(:,:), intent(inout) :: V
     real(prec), dimension(:),   intent(in) :: M
 
-    real(prec), dimension(lbound(V,1):ubound(V,1))  :: T
-    real(prec), dimension(lbound(V,1):ubound(V,1)) :: a
+    real(prec), dimension(lbound(V,2):ubound(V,2))  :: T
+    real(prec), dimension(lbound(V,2):ubound(V,2)) :: a
 
     T = T0/(one + half*(gamma - one)*M(:)**2)
 
-    V(:,3) = 1000.0_prec*p0/(one + half*(gamma - one)*M**2)**(gamma/(gamma-1))
-    V(:,1) = V(:,3)/(R_gas*T)
-    call speed_of_sound(V(:,3),V(:,1),a)
-    V(:,2) = M*a
+    V(3,:) = 1000.0_prec*p0/(one + half*(gamma - one)*M**2)**(gamma/(gamma-1))
+    V(1,:) = V(3,:)/(R_gas*T)
+    call speed_of_sound(V(3,:),V(1,:),a)
+    V(2,:) = M*a
 
   end subroutine isentropic_relations
 
