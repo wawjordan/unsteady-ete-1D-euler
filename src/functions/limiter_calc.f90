@@ -2,16 +2,15 @@ module limiter_calc
 
   use set_precision, only : prec
   use set_constants, only : zero, one, two, three, four, half, fourth
-  use set_inputs, only : neq, imax, i_low, i_high, ig_low, ig_high
-  use set_inputs, only : beta_lim
-
+  use set_inputs, only : i_low, i_high, ig_low, ig_high, imax
+  use set_inputs, only : neq, beta_lim, n_ghost
   implicit none
 
   private
 
-  public :: calc_consecutive_variations, limiter_fun, select_limiter
+  public :: calculate_limiters, limiter_fun, select_limiter
 
-  procedure( calc_limiter ), pointer :: limiter_fun
+  procedure( calc_limiter ), pointer :: limiter_fun => null()
 
   abstract interface
   !============================== calc_limiter ===============================80
@@ -19,11 +18,11 @@ module limiter_calc
   !! Description:
   !<
   !===========================================================================80
-  subroutine calc_limiter( r, psi )
+  subroutine calc_limiter(r,psi)
 
-    import :: prec, i_low, i_high, neq
+    import :: prec
     real(prec), dimension(:,:), intent(in) :: r
-    real(prec), dimension(i_low-1:i_high,neq), intent(out) :: psi
+    real(prec), dimension(:,:), intent(out) :: psi
 
   end subroutine calc_limiter
 
@@ -40,10 +39,10 @@ contains
 
     use set_inputs, only : limiter_scheme
 
-    limiter_fun => null()
-
     select case(limiter_scheme)
 
+    case(0)
+      limiter_fun => null_limiter
     case(1)
       limiter_fun => van_leer_limiter
     case(2)
@@ -58,41 +57,89 @@ contains
 
   end subroutine select_limiter
 
-  subroutine calc_consecutive_variations(V,r_plus,r_minus)
-
-    real(prec), dimension(ig_low:ig_high,neq), intent(in)  :: V
-    !real(prec), dimension(i_low-1:i_high,neq), intent(out) :: r_plus, r_minus
-    real(prec), dimension(ig_low:ig_high,neq), intent(out)   :: r_plus, r_minus
-    real(prec), dimension(neq) :: den
-    integer :: i
-
-    do i = i_low-1,i_high
-      den = V(i+1,:) - V(i,:)
-      den = sign(one,den)*max(abs(den),1e-6_prec)
-      r_plus(i,:)   = ( V(i+2,:) - V(i+1,:) )/den
-      r_minus(i,:)  = ( V(i,:) - V(i-1,:) )/den
-    end do
-
-    r_plus(i_low-2,:) = r_plus(i_low-1,:)
-    r_minus(i_low-2,:) = r_minus(i_low-1,:)
-
-    r_plus(i_high+1,:) = r_plus(i_high,:)
-    r_minus(i_high+1,:) = r_minus(i_high,:)
-
-  end subroutine calc_consecutive_variations
-
-  !=========================== van_leer_limiter ==============================80
+  !========================== calculate_limiter ==============================80
   !>
   !! Description:
   !<
   !===========================================================================80
-  subroutine van_leer_limiter( r, psi )
+  subroutine calculate_limiters(soln)
 
-    real(prec), dimension(:,:), intent(in) :: r
-    !real(prec), dimension(i_low-1:i_high,neq), intent(out)   :: psi
-    real(prec), dimension(ig_low:ig_high,neq), intent(out)   :: psi
+    use soln_type, only : soln_t
+    type(soln_t), intent(inout) :: soln
+    real(prec), dimension(neq,i_low-1:i_high) :: &
+             psi_p, psi_m, r_plus, r_minus!, den
+    real(prec) :: den(neq)
+    integer :: i
 
-    psi = (r + abs(r))/(one + r)
+    !den = soln%V(:,i_low  :i_high+1)       &
+    !       - soln%V(:,i_low-1:I_high)
+    !den = sign(one,den)*max(abs(den),1e-6_prec)
+    do i = i_low, i_high
+      den = soln%V(:,i+1) - soln%V(:,i)
+      den = sign(one,den)*max(abs(den),1e-6_prec)
+      r_plus(:,i)  = ( soln%V(:,i+2) &
+                - soln%V(:,i+1) )/den
+      r_minus(:,i) = ( soln%V(:,i) &
+                - soln%V(:,i-1) )/den
+    end do
+    !r_plus  = ( soln%V(:,i_low+1:i_high+2) &
+    !             - soln%V(:,i_low  :i_high+1) )/den
+
+    !r_minus = ( soln%V(:,i_low-1:i_high ) &
+    !             - soln%V(:,i_low-2:i_high-1) )/den
+    call limiter_fun(r_plus,psi_p)
+    call limiter_fun(r_minus,psi_m)
+
+    soln%psi_p( :,i_low-1:i_high) = psi_p
+    soln%psi_m( :,i_low-1:i_high) = psi_m
+
+    do i = 1,n_ghost
+    soln%psi_p( :,i_low-1-i) = one!&
+         !soln%psi_p(:,i_low-i)
+    soln%psi_m( :,i_low-1-i) = one!&
+         !soln%psi_m(:,i_low-i)
+    soln%psi_p( :,i_high+i) = one!&
+         !soln%psi_p(:,i_high-1+i)
+    soln%psi_m( :,i_high+i) = one!&
+         !soln%psi_m(:,i_high-1+i)
+    end do
+
+  end subroutine calculate_limiters
+
+  !============================= null_limiter ================================80
+  !>
+  !! Description:
+  !!
+  !! Inputs:      r   :
+  !!
+  !! Outputs:     psi :
+  !<
+  !===========================================================================80
+  subroutine null_limiter(r,psi)
+
+    real(prec), dimension(:,:),  intent(in) :: r
+    real(prec), dimension(:,:), intent(out) :: psi
+
+    psi = one
+
+  end subroutine null_limiter
+
+  !=========================== van_leer_limiter ==============================80
+  !>
+  !! Description:
+  !!
+  !! Inputs:      r   :
+  !!
+  !! Outputs:     psi :
+  !<
+  !===========================================================================80
+  subroutine van_leer_limiter(r,psi)
+
+    real(prec), dimension(:,:),  intent(in) :: r
+    real(prec), dimension(:,:), intent(out) :: psi
+
+    psi = sign(one,one+r)*max(abs(one+r),1.0e-12_prec)
+    psi = (r + abs(r))/psi
     psi = half*(one+sign(one,r))*psi
 
   end subroutine van_leer_limiter
@@ -100,13 +147,16 @@ contains
   !======================== van_albada_limiter ===============================80
   !>
   !! Description:
+  !!
+  !! Inputs:      r   :
+  !!
+  !! Outputs:     psi :
   !<
   !===========================================================================80
-  subroutine van_albada_limiter( r, psi )
+  subroutine van_albada_limiter(r,psi)
 
-    real(prec), dimension(:,:), intent(in) :: r
-    !real(prec), dimension(i_low-1:i_high,neq), intent(out)   :: psi
-    real(prec), dimension(ig_low:ig_high,neq), intent(out)   :: psi
+    real(prec), dimension(:,:),  intent(in) :: r
+    real(prec), dimension(:,:), intent(out) :: psi
 
     psi = (r**2 + r)/(one + r**2)
     psi = half*(one+sign(one,r))*psi
@@ -116,13 +166,16 @@ contains
   !============================== minmod_limiter =============================80
   !>
   !! Description:
+  !!
+  !! Inputs:      r   :
+  !!
+  !! Outputs:     psi :
   !<
   !===========================================================================80
-  subroutine minmod_limiter( r, psi )
+  subroutine minmod_limiter(r,psi)
 
-    real(prec), dimension(:,:), intent(in) :: r
-    !real(prec), dimension(i_low-1:i_high,neq), intent(out)   :: psi
-    real(prec), dimension(ig_low:ig_high,neq), intent(out)   :: psi
+    real(prec), dimension(:,:),  intent(in) :: r
+    real(prec), dimension(:,:), intent(out) :: psi
 
     psi = half*(one + sign(one,r))*min(r,one)
 
@@ -131,15 +184,18 @@ contains
   !============================== beta_limiter ===============================80
   !>
   !! Description:
+  !!
+  !! Inputs:      r   :
+  !!
+  !! Outputs:     psi :
   !<
   !===========================================================================80
-  subroutine beta_limiter( r, psi )
+  subroutine beta_limiter(r,psi)
 
     real(prec), dimension(:,:), intent(in) :: r
-    !real(prec), dimension(i_low-1:i_high,neq), intent(out)   :: psi
-    real(prec), dimension(ig_low:ig_high,neq), intent(out)   :: psi
+    real(prec), dimension(:,:), intent(out) :: psi
 
-    psi = maxval((/ zero, min(beta_lim*r,one), min(r,beta_lim) /))
+    psi = max(zero, min(beta_lim*r,one), min(r,beta_lim))
     psi = half*(one+sign(one,r))*psi
 
   end subroutine beta_limiter
