@@ -6,7 +6,7 @@ module other_subroutines
   use set_inputs, only : epsM, kappaM
   use fluid_constants, only : gamma
   use variable_conversion
-  use limiter_calc, only : limiter_fun, calc_consecutive_variations
+  use limiter_calc, only : limiter_fun!, calc_consecutive_variations
   use soln_type, only : soln_t
   use exact_soln_type, only : exact_soln_t
   use grid_type, only : grid_t
@@ -20,78 +20,122 @@ module other_subroutines
   !! Description:
   !<
   !===========================================================================80
-  subroutine calculate_sources(P,dA,S)
+  subroutine calculate_sources(soln,grid)
 
-    real(prec), dimension(i_low:i_high),   intent(in) :: dA
-    real(prec), dimension(ig_low:ig_high),   intent(in) :: P
-    real(prec), dimension(i_low:i_high),   intent(out) :: S
+    type(soln_t), intent(inout) :: soln
+    type(grid_t), intent(in)    :: grid
+    real(prec), dimension(i_low:i_high) :: pres, darea
 
-    S(i_low:i_high) = P(i_low:i_high)*dA(i_low:i_high)
+    pres  = soln%V(3,i_low:i_high)
+    darea = grid%dAc(i_low:i_high)
+
+    soln%S(2,:) = source_term_1D_nozzle(pres,darea)
 
   end subroutine calculate_sources
+
+  elemental function source_term_1D_nozzle(pres,darea)
+    real(prec) :: source_term_1D_nozzle
+    real(prec), intent(in)  :: pres, darea
+
+    source_term_1D_nozzle = pres*darea
+  end function source_term_1D_nozzle
+
 
   !================================ MUSCL_extrap =============================80
   !>
   !! Description:
   !<
   !===========================================================================80
-  subroutine MUSCL_extrap( V, left, right )
-
-    use set_inputs, only : limiter_freeze, psi_plus, psi_minus
-    real(prec), dimension(ig_low:ig_high,neq), intent(in)  :: V
-    real(prec), dimension(i_low-1:i_high,neq), intent(out) :: left, right
-    !real(prec), dimension(i_low-1:i_high,neq), intent(inout) :: psi_plus, psi_minus
-    !real(prec), dimension(i_low-1:i_high,neq) :: r_plus, r_minus
-    real(prec), dimension(ig_low:ig_high,neq)  :: r_plus, r_minus
-    !real(prec), dimension(neq) :: den
+  subroutine MUSCL_extrap(soln,Left,Right)
+    type(soln_t), intent(inout) :: soln
+    real(prec), dimension(neq,i_low-1:i_high), intent(out) :: Left, Right
     integer :: i
 
-    !do i = i_low-1,i_high
-    !  den = V(i+1,:) - V(i,:)
-    !  den = sign(one,den)*max(abs(den),1e-6_prec)
-    !  r_plus(i,:)   = ( V(i+2,:) - V(i+1,:) )/den
-    !  r_minus(i,:)  = ( V(i,:) - V(i-1,:) )/den
-    !  write(*,*) i, r_plus(i,1), r_plus(i,2), r_plus(i,3), &
-    !           &    r_minus(i,1),r_minus(i,2), r_minus(i,3)
-    !end do
-
-    if (limiter_freeze) then
-      continue
-    else
-      call calc_consecutive_variations(V,r_plus,r_minus)
-      call limiter_fun(r_plus,psi_plus)
-      call limiter_fun(r_minus,psi_minus)
-    end if
-
     do i = i_low-1,i_high
-      left(i,:) = V(i,:) + fourth*epsM*( &
-         & (one-kappaM)*psi_plus(i-1,:)*(V(i,:)-V(i-1,:)) + &
-         & (one+kappaM)*psi_minus(i,:)*(V(i+1,:)-V(i,:)) )
-      right(i,:) = V(i+1,:) - fourth*epsM*( &
-         & (one+kappaM)*psi_minus(i+1,:)*(V(i+1,:)-V(i,:)) + &
-         & (one-kappaM)*psi_plus(i,:)*(V(i+2,:)-V(i+1,:)) )
-    end do
-    !left(i_low-1,:)  = two*left(i_low,:) - left(i_low+1,:)
-    !left(i_high,:)   = two*left(i_high-1,:) - left(i_high-2,:)
-    !right(i_low-1,:) = two*right(i_low,:) - right(i_low+1,:)
-    !right(i_high,:)  = two*right(i_high-1,:) - right(i_high-2,:)
-    !left(i_low-1,:)  = V(i_low-1,:)
-    !left(i_high,:)   = V(i_high,:)
-    !right(i_low-1,:) = V(i_low,:)
-    !right(i_high,:)  = V(i_high+1,:)
+      Left(:,i) = soln%V(:,i) + fourth*epsM*( &
+            (one-kappaM)*soln%psi_p(:,i-1)*( soln%V(:,i) - soln%V(:,i-1) ) + &
+            (one+kappaM)*soln%psi_m(:,i)  *( soln%V(:,i+1) - soln%V(:,i) ) )
 
-    !left(i_low-1,:)  = V(i_low-1,:)
-    !left(i_high,:)   = V(i_high,:)
-    !right(i_low-1,:) = V(i_low-1,:)
-    !right(i_high,:)  = V(i_high,:)
-    call limit_primitives(left)
-    call limit_primitives(right)
-    !write(*,*)
-    !do i = i_low-1,i_high
-    !  write(*,*) i, left(i,1), left(i,2), left(i,3), right(i,1), right(i,2), right(i,3)
-    !end do
+      Right(:,i) = soln%V(:,i+1) - fourth*epsM*( &
+            (one-kappaM)*soln%psi_m(:,i+1)*( soln%V(:,i+2) - soln%V(:,i+1) ) + &
+            (one+kappaM)*soln%psi_p(:,i)  *( soln%V(:,i+1) - soln%V(:,i) ) )
+    end do
+
+   ! Left  = soln%V(:,i_low-1:i_high) + fourth*epsM*(       &
+   !         (one-kappaM)*soln%psi_p(:,i_low-2:i_high-1)* &
+   !                           ( soln%V(:,i_low-1:i_high)  &
+   !                           - soln%V(:,i_low-2:i_high-1) )&
+   !       + (one+kappaM)*soln%psi_m(:,i_low-1:i_high)* &
+   !                           ( soln%V(:,i_low  :i_high+1)  &
+   !                           - soln%V(:,i_low-1:i_high) ))
+   ! Right  = soln%V(:,i_low  :i_high+1) - fourth*epsM*(       &
+   !         (one-kappaM)*soln%psi_m(:,i_low  :i_high+1)* &
+   !                           ( soln%V(:,i_low+1:i_high+2)  &
+   !                           - soln%V(:,i_low  :i_high+1) )&
+   !       + (one+kappaM)*soln%psi_p(:,i_low-1:i_high)* &
+   !                           ( soln%V(:,i_low  :i_high+1)  &
+   !                           - soln%V(:,i_low-1:i_high) ))
 
   end subroutine MUSCL_extrap
+
+
+!  subroutine MUSCL_extrap( V, left, right )
+!
+!    use set_inputs, only : limiter_freeze, psi_plus, psi_minus
+!    real(prec), dimension(neq,ig_low:ig_high), intent(in)  :: V
+!    real(prec), dimension(neq,i_low-1:i_high), intent(out) :: left, right
+!    !real(prec), dimension(neq,i_low-1:i_high), intent(inout) :: psi_plus, psi_minus
+!    !real(prec), dimension(neq,i_low-1:i_high) :: r_plus, r_minus
+!    real(prec), dimension(neq,ig_low:ig_high)  :: r_plus, r_minus
+!    !real(prec), dimension(neq) :: den
+!    integer :: i
+!
+    !do i = i_low-1,i_high
+    !  den = V(:,i+1) - V(:,i)
+    !  den = sign(one,den)*max(abs(den),1e-6_prec)
+    !  r_plus(:,i)   = ( V(:,i+2) - V(:,i+1) )/den
+    !  r_minus(:,i)  = ( V(:,i) - V(:,i-1) )/den
+    !  write(*,*) i, r_plus(1,i), r_plus(2,i), r_plus(3,i), &
+    !           &    r_minus(1,i),r_minus(2,i), r_minus(3,i)
+    !end do
+
+!    if (limiter_freeze) then
+!      continue
+!    else
+!      call calc_consecutive_variations(V,r_plus,r_minus)
+!      call limiter_fun(r_plus,psi_plus)
+!      call limiter_fun(r_minus,psi_minus)
+!    end if
+
+!    do i = i_low-1,i_high
+!      left(:,i) = V(:,i) + fourth*epsM*( &
+!         & (one-kappaM)*psi_plus(:,i-1)*(V(:,i)-V(:,i-1)) + &
+!         & (one+kappaM)*psi_minus(:,i)*(V(:,i+1)-V(:,i)) )
+!      right(:,i) = V(:,i+1) - fourth*epsM*( &
+!         & (one+kappaM)*psi_minus(:,i+1)*(V(:,i+1)-V(:,i)) + &
+!         & (one-kappaM)*psi_plus(:,i)*(V(:,i+2)-V(:,i+1)) )
+!    end do
+    !left(:,i_low-1)  = two*left(:,i_low) - left(:,i_low+1)
+    !left(:,i_high)   = two*left(:,i_high-1) - left(:,i_high-2)
+    !right(:,i_low-1) = two*right(:,i_low) - right(:,i_low+1)
+    !right(:,i_high)  = two*right(:,i_high-1) - right(:,i_high-2)
+    !left(:,i_low-1)  = V(:,i_low-1)
+    !left(:,i_high)   = V(:,i_high)
+    !right(:,i_low-1) = V(:,i_low)
+    !right(:,i_high)  = V(:,i_high+1)
+
+    !left(:,i_low-1)  = V(:,i_low-1)
+    !left(:,i_high)   = V(:,i_high)
+    !right(:,i_low-1) = V(:,i_low-1)
+    !right(:,i_high)  = V(:,i_high)
+!    call limit_primitives(left)
+!    call limit_primitives(right)
+    !write(*,*)
+    !do i = i_low-1,i_high
+    !  write(*,*) i, left(1,i), left(2,i), left(3,i), right(1,i), right(2,i), right(3,i)
+    !end do
+
+!  end subroutine MUSCL_extrap
 
   !================================== calc_de ==== ===========================80
   !>
@@ -103,31 +147,33 @@ module other_subroutines
     type(soln_t), intent(inout) :: soln
     type(exact_soln_t), intent(in) :: exact_soln
     logical, intent(in) :: cons
-    real(prec), dimension(i_low:i_high,1:neq), intent(out) :: DE
-    real(prec), dimension(1,1:neq), intent(out) :: DEnorm
+    real(prec), dimension(neq,i_low:i_high), intent(out) :: DE
+    real(prec), dimension(neq), intent(out) :: DEnorm
     integer, intent(in) :: pnorm
     real(prec) :: Linv
     Linv = one/real(i_high-i_low)
     if (cons) then
-      DE = soln%U(i_low:i_high,1:neq) - exact_soln%Uq(i_low:i_high,1:neq)
+      DE = soln%U(:,i_low:i_high) - exact_soln%Uq(:,i_low:i_high)
     else
-      DE = soln%V(i_low:i_high,1:neq) - exact_soln%Vq(i_low:i_high,1:neq)
+      DE = soln%V(:,i_low:i_high) - exact_soln%Vq(:,i_low:i_high)
     end if
 
     if (pnorm == 0) then
-      DEnorm(1,1:neq) = maxval(abs(DE),1)
+      DEnorm(1) = maxval(abs(DE(1,:)))
+      DEnorm(2) = maxval(abs(DE(2,:)))
+      DEnorm(3) = maxval(abs(DE(3,:)))
     elseif (pnorm == 1) then
-      DEnorm(1,1) = Linv*sum(abs(DE(:,1)),1)
-      DEnorm(1,2) = Linv*sum(abs(DE(:,2)),1)
-      DEnorm(1,3) = Linv*sum(abs(DE(:,3)),1)
+      DEnorm(1) = Linv*sum(abs(DE(1,:)))
+      DEnorm(2) = Linv*sum(abs(DE(2,:)))
+      DEnorm(3) = Linv*sum(abs(DE(3,:)))
     elseif (pnorm == 2) then
-      DEnorm(1,1) = sqrt(Linv*sum(DE(:,1)**2,1))
-      DEnorm(1,2) = sqrt(Linv*sum(DE(:,2)**2,1))
-      DEnorm(1,3) = sqrt(Linv*sum(DE(:,3)**2,1))
+      DEnorm(1) = sqrt(Linv*sum(DE(1,:)**2))
+      DEnorm(2) = sqrt(Linv*sum(DE(2,:)**2))
+      DEnorm(3) = sqrt(Linv*sum(DE(3,:)**2))
     else
-      DEnorm(1,1) = maxval(abs(DE(:,1)))
-      DEnorm(1,2) = maxval(abs(DE(:,2)))
-      DEnorm(1,3) = maxval(abs(DE(:,3)))
+      DEnorm(1) = maxval(abs(DE(1,:)))
+      DEnorm(2) = maxval(abs(DE(2,:)))
+      DEnorm(3) = maxval(abs(DE(3,:)))
     end if
 
   end subroutine calc_de
@@ -171,6 +217,8 @@ module other_subroutines
     end if
 
     select case(limiter_scheme)
+    case(0)
+      write (limiter_str,"(A3)") "_NA"
     case(1)
       write (limiter_str,"(A3)") "_VL"
     case(2)
@@ -224,9 +272,6 @@ module other_subroutines
     write(40,*) 'TITLE = "Q1D soln ('// &
     & trim(adjustl(filename))//')"'
 
-    write(40,*) 'variables="x(m)""A(m^2)""rho(kg/m^3)""u(m/s)""p(N/m^2)"  &
-    & "M""U1""U2""U3""M-exact""rho-exact""u-exact""p-exact""DE1""DE2""DE3"'
-
     write(40,*) 'variables="x (m)""A (m<sup>2</sup>)"&
     & "<greek>r</greek> (kg/m<sup>3</sup>)""u (m/s)"&
     & "p (N/m<sup>2</sup>)"  &
@@ -251,21 +296,50 @@ module other_subroutines
     type( exact_soln_t ), intent(in) :: ex_soln
     integer,        intent(in) :: num_iter
 
-    integer :: i
+    integer :: i, j, low, high
+
+    low = i_low
+    high = i_high
 
     open(40,status='unknown')
     write(40,*) 'zone T="',num_iter,'" '
-    write(40,*) 'I=',imax
-    write(40,*) 'DATAPACKING=POINT'
-    write(40,*) 'DT=(DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE &
-             & DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE &
-             & DOUBLE)'
-    do i = i_low,i_high
-      write(40,*) grid%xc(i),grid%Ac(i),soln%V(i,1),soln%V(i,2),soln%V(i,3),&
-             & soln%mach(i),soln%U(i,1),soln%U(i,2),soln%U(i,3), &
-             & ex_soln%Mq(i), ex_soln%Vq(i,1), ex_soln%Vq(i,2),  &
-             & ex_soln%Vq(i,3), soln%DE(i,1), soln%DE(i,2), soln%DE(i,3)
-    end do
+    write(40,*) 'I=',high-low+2
+    write(40,*) 'J=',1
+    write(40,*) 'DT=(DOUBLE DOUBLE DOUBLE &
+                   & DOUBLE DOUBLE DOUBLE &
+                   & DOUBLE DOUBLE DOUBLE &
+                   & DOUBLE DOUBLE DOUBLE &
+                   & DOUBLE DOUBLE DOUBLE &
+                   & DOUBLE)'
+    write(40,*) 'DATAPACKING=BLOCK'
+    write(40,*) 'VARLOCATION=([1-16]=CELLCENTERED)'
+    write(40,*) 'STRANDID=',1
+    write(40,*) 'SOLUTIONTIME=',real(num_iter,prec)
+    !write(40,*) ( ( grid%xi(i) ,  i = low-1,high), NEW_LINE('a'), j = 1,2 )
+    !write(40,*) ( ( real(j-1,prec)*grid%Ai(i), i = low-1,high), &
+    !            NEW_LINE('a'), j = 1,2 )
+    write(40,*) ( grid%xc(i),  i = low,high )
+    write(40,*) ( grid%Ac(i),  i = low,high )
+    write(40,*) ( soln%V(1,i),  i = low,high )
+    write(40,*) ( soln%V(2,i),  i = low,high )
+    write(40,*) ( soln%V(3,i),  i = low,high )
+    write(40,*) ( soln%mach(i), i = low,high )
+    write(40,*) ( soln%U(1,i),  i = low,high )
+    write(40,*) ( soln%U(2,i),  i = low,high )
+    write(40,*) ( soln%U(3,i),  i = low,high )
+    write(40,*) ( ex_soln%Mq(i)   , i = low,high )
+    write(40,*) ( ex_soln%Vq(1,i) , i = low,high )
+    write(40,*) ( ex_soln%Vq(2,i) , i = low,high )
+    write(40,*) ( ex_soln%Vq(3,i) , i = low,high )
+    write(40,*) ( soln%DE(1,i), i = low,high )
+    write(40,*) ( soln%DE(2,i), i = low,high )
+    write(40,*) ( soln%DE(3,i), i = low,high )
+    !do i = i_low,i_high
+    !  write(40,*) grid%xc(i),grid%Ac(i),soln%V(1,i),soln%V(2,i),soln%V(3,i),&
+    !         & soln%mach(i),soln%U(1,i),soln%U(2,i),soln%U(3,i), &
+    !         & ex_soln%Mq(i), ex_soln%Vq(1,i), ex_soln%Vq(2,i),  &
+    !         & ex_soln%Vq(3,i), soln%DE(1,i), soln%DE(2,i), soln%DE(3,i)
+    !end do
 
   end subroutine output_soln
 
