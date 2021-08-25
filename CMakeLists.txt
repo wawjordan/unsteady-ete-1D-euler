@@ -89,6 +89,18 @@ set_target_properties( test_program PROPERTIES
                               LINK_FLAGS    "${CMAKE_FORTRAN_LINK_FLAGS}" )
 
 #=============================================================================80
+# Add BLAS and LAPACK library
+# If cmake cannot find set BLAS_DIR and LAPACK_DIR
+#=============================================================================80
+find_package( LAPACK REQUIRED )
+
+if ( LAPACK_FOUND )
+
+  target_link_libraries( test_program ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} )
+
+endif()
+
+#=============================================================================80
 # Testing: enable with -DPFUNIT=/path/to/pfunit
 #=============================================================================80
 set(PFUNIT "FALSE" CACHE PATH "path to pFUnit")
