@@ -8,7 +8,7 @@ module set_inputs
 
   private
 
-  public :: imax, neq, xmin, xmax, n_ghost_cells
+  public :: imax, neq, xmin, xmax, n_ghost
   public :: i_high, i_low, ig_high, ig_low
   public :: areaStar, area, darea
   public :: CFL, eps, tol, eps_roe, beta_lim, epsM, kappaM
@@ -25,7 +25,7 @@ module set_inputs
   integer :: ig_high = 10
   integer :: neq  = 3
   integer :: max_iter = 150000
-  integer :: n_ghost_cells   = 2
+  integer :: n_ghost   = 2
   integer :: max_newton_iter = 1000
 
   real(prec) :: newton_tol = 1.0e-15_prec
@@ -46,7 +46,7 @@ module set_inputs
   integer :: res_save      = 10
   integer :: res_out       = 1000
   real(prec) :: eps_roe    = 0.1_prec
-  real(prec) :: epsM       = zero
+  real(prec) :: epsM       = one
   real(prec) :: kappaM     = -one
   logical :: limiter_freeze = .false.
   logical :: cons           = .true.
@@ -94,8 +94,8 @@ module set_inputs
     rho0 = 1000.0_prec*p0/(R_gas*T0)
     i_low = 1
     i_high = imax
-    ig_low  = 1 - n_ghost_cells
-    ig_high = imax + n_ghost_cells
+    ig_low  = 1 - n_ghost
+    ig_high = imax + n_ghost
     write(*,'(A8,F20.14,A13)') 'R     = ', R_gas, ' [J/(kmol*K)]'
     write(*,'(A8,F20.14)')     'gamma = ', gamma
     write(*,'(A8,F20.14,A6)')  'a_0   = ', a0, ' [m/s]'
@@ -104,12 +104,12 @@ module set_inputs
     write(*,'(A8,F20.14,A4)')  'T_0   = ', T0, ' [K]'
     write(*,'(A8,F20.14,A6)')  'A*    = ', areaStar, ' [m^2]'
 
-    allocate(leftV(i_low-1:i_high,1:neq))
-    allocate(rightV(i_low-1:i_high,1:neq))
-    allocate(leftU(i_low-1:i_high,1:neq))
-    allocate(rightU(i_low-1:i_high,1:neq))
-    allocate(psi_plus(ig_low:ig_high,1:neq))
-    allocate(psi_minus(ig_low:ig_high,1:neq))
+    allocate(leftV(neq,i_low-1:i_high))
+    allocate(rightV(neq,i_low-1:i_high))
+    allocate(leftU(neq,i_low-1:i_high))
+    allocate(rightU(neq,i_low-1:i_high))
+    allocate(psi_plus(neq,ig_low:ig_high))
+    allocate(psi_minus(neq,ig_low:ig_high))
 
   end subroutine set_derived_inputs
 
