@@ -12,19 +12,20 @@ module soln_type
     real(prec), allocatable, dimension(:,:) :: V
     real(prec), allocatable, dimension(:,:) :: U
     real(prec), allocatable, dimension(:,:) :: R
+    real(prec), allocatable, dimension(:,:) :: S
     real(prec), allocatable, dimension(:,:) :: F
-    real(prec), allocatable, dimension(:,:) :: D
+    real(prec), allocatable, dimension(:,:) :: psi_p
+    real(prec), allocatable, dimension(:,:) :: psi_m
+    real(prec), allocatable, dimension(:,:) :: DE
     real(prec), allocatable, dimension(:)   :: asnd
     real(prec), allocatable, dimension(:)   :: mach
     real(prec), allocatable, dimension(:)   :: temp
-    real(prec), allocatable, dimension(:)   :: dt
-    real(prec), allocatable, dimension(:)   :: src
     real(prec), allocatable, dimension(:)   :: lambda
-    real(prec), allocatable, dimension(:,:) :: DE
-    real(prec), allocatable, dimension(:)   :: DEnorm
-    real(prec), allocatable, dimension(:)   :: rnorm
-    real(prec), allocatable, dimension(:)   :: rold
+    real(prec), allocatable, dimension(:)   :: dt
     real(prec), allocatable, dimension(:)   :: rinit
+    real(prec), allocatable, dimension(:)   :: rold
+    real(prec), allocatable, dimension(:)   :: rnorm
+    real(prec), allocatable, dimension(:)   :: DEnorm
     real(prec) :: time
 
   end type soln_t
@@ -41,39 +42,41 @@ module soln_type
 
     type(soln_t), intent(inout) :: soln
 
-    allocate( soln%V( ig_low:ig_high, neq ), &
-              soln%U( ig_low:ig_high, neq ), &
-              soln%R( i_low:i_high,   neq ), &
-              soln%F( i_low-1:i_high, neq ), &
-              soln%D( i_low-1:i_high, neq ), &
-              soln%asnd( ig_low:ig_high ),   &
-              soln%mach( ig_low:ig_high ),   &
-              soln%temp( ig_low:ig_high ),   &
-              soln%src( i_low:i_high ),      &
-              soln%dt( i_low:i_high ),       &
-              soln%lambda( ig_low:ig_high ), &
-              soln%rnorm( 1:neq ),           &
-              soln%rold( 1:neq ),            &
-              soln%DE( i_low:i_high, neq ),  &
-              soln%DEnorm(1:neq ),           &
-              soln%rinit( 1:neq ) )
+    allocate( soln%V(  neq,  ig_low:ig_high ), &
+              soln%U(  neq,  ig_low:ig_high ), &
+              soln%R(  neq,   i_low:i_high ),  &
+              soln%S(  neq,   i_low:i_high ),  &
+              soln%F(  neq, i_low-1:i_high ),  &
+              soln%DE( neq,   i_low:i_high ),  &
+              soln%asnd( ig_low:ig_high ),     &
+              soln%mach( ig_low:ig_high ),     &
+              soln%temp( ig_low:ig_high ),     &
+              soln%lambda( ig_low:ig_high ),   &
+              soln%dt( i_low:i_high ),         &
+              soln%rinit( neq ),               &
+              soln%rold( neq ),                &
+              soln%rnorm( neq ),               &
+              soln%DEnorm( neq ) )
+    allocate( soln%psi_p( neq, ig_low-1:ig_high ), &
+              soln%psi_m( neq, ig_low-1:ig_high )  )
 
     soln%V      = zero
     soln%U      = zero
     soln%R      = zero
+    soln%S      = zero
     soln%F      = zero
-    soln%D      = zero
+    soln%DE     = zero
     soln%asnd   = zero
     soln%mach   = zero
     soln%temp   = zero
-    soln%src    = zero
-    soln%dt     = zero
     soln%lambda = zero
-    soln%rnorm  = zero
-    soln%rold   = zero
+    soln%dt     = zero
     soln%rinit  = zero
-    soln%DE     = zero
-    soln%DE     = zero
+    soln%rold   = zero
+    soln%rnorm  = zero
+    soln%DEnorm = zero
+    soln%psi_p  = zero
+    soln%psi_m  = zero
     soln%time   = zero
 
   end subroutine allocate_soln
@@ -93,19 +96,20 @@ module soln_type
     deallocate(soln%V,      &
                soln%U,      &
                soln%R,      &
+               soln%S,      &
                soln%F,      &
-               soln%D,      &
+               soln%DE,     &
                soln%asnd,   &
                soln%mach,   &
                soln%temp,   &
-               soln%src,    &
-               soln%dt,     &
                soln%lambda, &
-               soln%rnorm,  &
-               soln%rold,   &
+               soln%dt,     &
                soln%rinit,  &
-               soln%DE,     &
-               soln%DEnorm  )
+               soln%rold,   &
+               soln%rnorm,  &
+               soln%DEnorm, &
+               soln%psi_p,  &
+               soln%psi_m   )
 
   end subroutine deallocate_soln
 
