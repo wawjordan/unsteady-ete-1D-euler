@@ -3,7 +3,7 @@ module exact_soln_type
   use set_precision      , only : prec
   use set_constants      , only : zero, one, two, half
   use fluid_constants    , only : R_gas, gamma
-  use set_inputs         , only : imax, neq, n_ghost_cells, eps, ig_low, ig_high
+  use set_inputs         , only : imax, neq, n_ghost, eps, ig_low, ig_high
   use set_inputs         , only : max_newton_iter, newton_tol, i_low, i_high
   use variable_conversion, only : isentropic_relations, prim2cons
   use riemann_problem    , only : init_bracket, solve_riemann, &
@@ -52,8 +52,8 @@ module exact_soln_type
       allocate( this%aq(ig_low:ig_high), &
                 this%Mq(ig_low:ig_high), &
                 this%Tq(ig_low:ig_high), &
-                this%Vq(ig_low:ig_high,neq), &
-                this%Uq(ig_low:ig_high,neq) )
+                this%Vq(neq,ig_low:ig_high), &
+                this%Uq(neq,ig_low:ig_high) )
       this%aq = zero
       this%Mq = zero
       this%Tq = zero
