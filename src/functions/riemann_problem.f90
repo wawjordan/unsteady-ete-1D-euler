@@ -181,9 +181,9 @@ subroutine pressure_function( pres, U_K, f_out )
     real(prec), intent(in)  :: x(:)
     real(prec), intent(inout) :: U(:,:)
     real(prec), intent(out)   :: xlocs(5)
-    real(prec), dimension(lbound(U,1):ubound(U,1)) :: S
+    real(prec), dimension(lbound(U,2):ubound(U,2)) :: S
     integer, dimension(5) :: xmsk
-    logical, dimension(lbound(U,1):ubound(U,1)) :: &
+    logical, dimension(lbound(U,2):ubound(U,2)) :: &
     msk_L1, msk_L2, msk_L3, msk_L4, msk_R1, msk_R2, msk_R3, msk_R4
 
     !logical, allocatable    :: mask1(:)
@@ -259,36 +259,36 @@ subroutine pressure_function( pres, U_K, f_out )
     if (pStar > U_L(3)) then
       xlocs(2) = shkvel_L*t + xoffset
       xmsk(2)  = 2
-      forall (i=1:n,(msk_L1(i).and.msk_L2(i)) ) U(i,:) = U_L
-      forall (i=1:n,(msk_L1(i).and.(.not.msk_L2(i)) ) ) U(i,:) = U_Star_shk_L
+      forall (i=1:n,(msk_L1(i).and.msk_L2(i)) ) U(:,i) = U_L
+      forall (i=1:n,(msk_L1(i).and.(.not.msk_L2(i)) ) ) U(:,i) = U_Star_shk_L
     else
       xlocs(1) = S_HL*t + xoffset
       xlocs(2) = S_TL*t + xoffset
       xmsk(1)  = 1
       xmsk(2)  = 1
-      forall (i=1:n,(msk_L1(i).and.msk_L3(i)) ) U(i,:) = U_L
-      forall (i=1:n,(msk_L1(i).and.msk_L4(i)) ) U(i,:) = U_Star_fan_L
+      forall (i=1:n,(msk_L1(i).and.msk_L3(i)) ) U(:,i) = U_L
+      forall (i=1:n,(msk_L1(i).and.msk_L4(i)) ) U(:,i) = U_Star_fan_L
       forall (i=1:n,(msk_L1(i).and.( &
              (.not.msk_L3(i)).and.(.not.msk_L4(i) ) ) ) ) &
-           U(i,:) = (/ rho_in_fan_L(rho_L,uvel_L,avel_L,x(i),t), &
+           U(:,i) = (/ rho_in_fan_L(rho_L,uvel_L,avel_L,x(i),t), &
                      uvel_in_fan_L(uvel_L,avel_L,x(i),t), &
                       pres_in_fan_L(pres_L,uvel_L,avel_L,x(i),t) /)
     end if
     if (pStar > U_R(3)) then
       xlocs(4) = shkvel_R*t + xoffset
       xmsk(4)  = 2
-      forall (i=1:n,(msk_R1(i).and.msk_R2(i)) ) U(i,:) = U_R
-      forall (i=1:n,(msk_R1(i).and.(.not.msk_R2(i)) ) ) U(i,:) = U_Star_shk_R
+      forall (i=1:n,(msk_R1(i).and.msk_R2(i)) ) U(:,i) = U_R
+      forall (i=1:n,(msk_R1(i).and.(.not.msk_R2(i)) ) ) U(:,i) = U_Star_shk_R
     else
       xlocs(4) = S_TR*t + xoffset
       xlocs(5) = S_HR*t + xoffset
       xmsk(4)  = 1
       xmsk(5)  = 1
-      forall (i=1:n,(msk_R1(i).and.msk_R3(i)) ) U(i,:) = U_R
-      forall (i=1:n,(msk_R1(i).and.msk_R4(i)) ) U(i,:) = U_Star_fan_R
+      forall (i=1:n,(msk_R1(i).and.msk_R3(i)) ) U(:,i) = U_R
+      forall (i=1:n,(msk_R1(i).and.msk_R4(i)) ) U(:,i) = U_Star_fan_R
       forall (i=1:n,(msk_R1(i).and.( &
              (.not.msk_R3(i)).and.(.not.msk_R4(i) ) ) ) ) &
-           U(i,:) = (/ rho_in_fan_R(rho_R,uvel_R,avel_R,x(i),t), &
+           U(:,i) = (/ rho_in_fan_R(rho_R,uvel_R,avel_R,x(i),t), &
                       uvel_in_fan_R(uvel_R,avel_R,x(i),t), &
                       pres_in_fan_R(pres_R,uvel_R,avel_R,x(i),t) /)
     end if
@@ -301,9 +301,9 @@ subroutine pressure_function( pres, U_K, f_out )
     real(prec), intent(in)  :: x(:)
     real(prec), intent(inout) :: U(:,:)
     real(prec), intent(out)   :: xlocs(5)
-    real(prec), dimension(lbound(x,1):ubound(x,1),lbound(U,2):ubound(U,2)) :: IU
+    real(prec), dimension(lbound(U,1):ubound(U,1),lbound(x,1):ubound(x,1)) :: IU
     real(prec), dimension(lbound(x,1):ubound(x,1)) :: S
-    real(prec) :: U_L2(5,neq), U_R2(5,neq)
+    real(prec) :: U_L2(neq,5), U_R2(neq,5)
     integer, dimension(5) :: xmsk, ilocs
     logical, dimension(lbound(x,1):ubound(x,1)) :: &
     msk_L1, msk_L2, msk_L3, msk_L4, msk_R1, msk_R2, msk_R3, msk_R4
@@ -384,8 +384,8 @@ subroutine pressure_function( pres, U_K, f_out )
       xlocs(2) = shkvel_L*t
       xmsk(2)  = 2
       U_star_L = U_Star_shk_L
-      forall (i=1:n,(msk_L1(i).and.msk_L2(i)) ) IU(i,:) = U_L*x(i)
-      forall (i=1:n,(msk_L1(i).and.(.not.msk_L2(i)) ) ) IU(i,:) = &
+      forall (i=1:n,(msk_L1(i).and.msk_L2(i)) ) IU(:,i) = U_L*x(i)
+      forall (i=1:n,(msk_L1(i).and.(.not.msk_L2(i)) ) ) IU(:,i) = &
                                                          U_Star_shk_L*x(i)
     else
       xlocs(1) = S_HL*t
@@ -393,11 +393,11 @@ subroutine pressure_function( pres, U_K, f_out )
       xmsk(1)  = 1
       xmsk(2)  = 1
       U_Star_L = U_star_fan_L
-      forall (i=1:n,(msk_L1(i).and.msk_L3(i)) ) IU(i,:) = U_L*x(i)
-      forall (i=1:n,(msk_L1(i).and.msk_L4(i)) ) IU(i,:) = U_Star_fan_L*x(i)
+      forall (i=1:n,(msk_L1(i).and.msk_L3(i)) ) IU(:,i) = U_L*x(i)
+      forall (i=1:n,(msk_L1(i).and.msk_L4(i)) ) IU(:,i) = U_Star_fan_L*x(i)
       forall (i=1:n,(msk_L1(i).and.( &
              (.not.msk_L3(i)).and.(.not.msk_L4(i) ) ) ) ) &
-           IU(i,:) = (/ int_rho_L(rho_L,uvel_L,avel_L,x(i),t), &
+           IU(:,i) = (/ int_rho_L(rho_L,uvel_L,avel_L,x(i),t), &
                         int_uvel_L(uvel_L,avel_L,x(i),t), &
                         int_pres_L(pres_L,uvel_L,avel_L,x(i),t) /)
     end if
@@ -405,8 +405,8 @@ subroutine pressure_function( pres, U_K, f_out )
       xlocs(4) = shkvel_R*t
       xmsk(4)  = 2
       U_Star_R = U_star_shk_R
-      forall (i=1:n,(msk_R1(i).and.msk_R2(i)) ) IU(i,:) = U_R*x(i)
-      forall (i=1:n,(msk_R1(i).and.(.not.msk_R2(i)) ) ) IU(i,:) = &
+      forall (i=1:n,(msk_R1(i).and.msk_R2(i)) ) IU(:,i) = U_R*x(i)
+      forall (i=1:n,(msk_R1(i).and.(.not.msk_R2(i)) ) ) IU(:,i) = &
                                                          U_Star_shk_R*x(i)
     else
       xlocs(4) = S_TR*t
@@ -414,54 +414,58 @@ subroutine pressure_function( pres, U_K, f_out )
       xmsk(4)  = 1
       xmsk(5)  = 1
       U_Star_R = U_Star_fan_R
-      forall (i=1:n,(msk_R1(i).and.msk_R3(i)) ) IU(i,:) = U_R*x(i)
-      forall (i=1:n,(msk_R1(i).and.msk_R4(i)) ) IU(i,:) = U_Star_fan_R*x(i)
+      forall (i=1:n,(msk_R1(i).and.msk_R3(i)) ) IU(:,i) = U_R*x(i)
+      forall (i=1:n,(msk_R1(i).and.msk_R4(i)) ) IU(:,i) = U_Star_fan_R*x(i)
       forall (i=1:n,(msk_R1(i).and.( &
              (.not.msk_R3(i)).and.(.not.msk_R4(i) ) ) ) ) &
-             IU(i,:) = (/ int_rho_R(rho_R,uvel_R,avel_R,x(i),t), &
+             IU(:,i) = (/ int_rho_R(rho_R,uvel_R,avel_R,x(i),t), &
                           int_uvel_R(uvel_R,avel_R,x(i),t), &
                           int_pres_R(pres_R,uvel_R,avel_R,x(i),t) /)
     end if
 
     do i = 1,5
       call hunt(x,xlocs(i),ilocs(i))
+      !write(*,*) xlocs(i), ilocs(i)
     end do
+    !write(*,*)
+
+    !stop
 
     !write(*,*) ilocs
 
     do i = 1,5
       if (xmsk(i) == 0) then  ! no feature detected (left)
-        U_L2(i,:) = U_L*xlocs(i)
-        U_R2(i,:) = U_R*xlocs(i)
+        U_L2(:,i) = U_L*xlocs(i)
+        U_R2(:,i) = U_R*xlocs(i)
       elseif (i == 1 .and. xmsk(i) == 1) then ! left expansion (head)
-        U_L2(i,:) = U_L*xlocs(i)
-        U_R2(i,:) = (/ int_rho_L(rho_L,uvel_L,avel_L,xlocs(i),t), &
+        U_L2(:,i) = U_L*xlocs(i)
+        U_R2(:,i) = (/ int_rho_L(rho_L,uvel_L,avel_L,xlocs(i),t), &
                       int_uvel_L(uvel_L,avel_L,xlocs(i),t), &
                       int_pres_L(pres_L,uvel_L,avel_L,xlocs(i),t) /)
       elseif (i == 2 .and. xmsk(i) == 1) then ! left expansion (tail)
-        U_L2(i,:) = (/ int_rho_L(rho_L,uvel_L,avel_L,xlocs(i),t), &
+        U_L2(:,i) = (/ int_rho_L(rho_L,uvel_L,avel_L,xlocs(i),t), &
                       int_uvel_L(uvel_L,avel_L,xlocs(i),t), &
                       int_pres_L(pres_L,uvel_L,avel_L,xlocs(i),t) /)
-        U_R2(i,:) = U_Star_fan_L*xlocs(i)
+        U_R2(:,i) = U_Star_fan_L*xlocs(i)
       elseif (i == 2 .and. xmsk(i) == 2) then ! left shock
-        U_L2(i,:) = U_L*xlocs(i)
-        U_R2(i,:) = U_Star_shk_L*xlocs(i)
+        U_L2(:,i) = U_L*xlocs(i)
+        U_R2(:,i) = U_Star_shk_L*xlocs(i)
       elseif (i == 3) then ! contact discontinuity
-        U_L2(i,:) = U_Star_L*xlocs(i)
-        U_R2(i,:) = U_Star_R*xlocs(i)
+        U_L2(:,i) = U_Star_L*xlocs(i)
+        U_R2(:,i) = U_Star_R*xlocs(i)
       elseif (i == 4 .and. xmsk(i) == 2) then ! right shock
-        U_L2(i,:) = U_star_shk_R*xlocs(i)
-        U_R2(i,:) = U_R*xlocs(i)
+        U_L2(:,i) = U_star_shk_R*xlocs(i)
+        U_R2(:,i) = U_R*xlocs(i)
       elseif (i == 4 .and. xmsk(i) == 1) then ! right expansion (tail)
-        U_L2(i,:) = U_Star_fan_R*xlocs(i)
-        U_R2(i,:) = (/ int_rho_R(rho_R,uvel_R,avel_R,xlocs(i),t), &
+        U_L2(:,i) = U_Star_fan_R*xlocs(i)
+        U_R2(:,i) = (/ int_rho_R(rho_R,uvel_R,avel_R,xlocs(i),t), &
                       int_uvel_R(uvel_R,avel_R,xlocs(i),t), &
                       int_pres_R(pres_R,uvel_R,avel_R,xlocs(i),t) /)
       elseif (i == 5 .and. xmsk(i) == 1) then ! right expansion (head)
-        U_L2(i,:) = (/ int_rho_R(rho_R,uvel_R,avel_R,xlocs(i),t), &
+        U_L2(:,i) = (/ int_rho_R(rho_R,uvel_R,avel_R,xlocs(i),t), &
                       int_uvel_R(uvel_R,avel_R,xlocs(i),t), &
                       int_pres_R(pres_R,uvel_R,avel_R,xlocs(i),t) /)
-        U_R2(i,:) = U_R*xlocs(i)
+        U_R2(:,i) = U_R*xlocs(i)
       end if
     end do
 
@@ -473,16 +477,18 @@ subroutine pressure_function( pres, U_K, f_out )
     !stop
 
     do i = 1,n-1
-      U(i,:) = ( IU(i+1,:) - IU(i,:) )/( x(i+1) - x(i) )
+      U(:,i) = ( IU(:,i+1) - IU(:,i) )/( x(i+1) - x(i) )
     end do
     !do i = 1,n-1
-    !  U(i,:) = ( IU(i+1,:) - IU(i,:) )/( x(i+1) - x(i) )
+    !  U(:,i) = ( IU(:,i+1) - IU(:,i) )/( x(i+1) - x(i) )
     !end do
 
     do i = 1,5
-      U(ilocs(i),:) = ( U_L2(i,:) - IU(ilocs(i),:)  + &
-                      IU(ilocs(i)+1,:) - U_R2(i,:) )/ &
+      if ( (ilocs(i) > 1).and.(ilocs(i) < n) ) then
+        U(:,ilocs(i)) = ( U_L2(:,i) - IU(:,ilocs(i))  + &
+                        IU(:,ilocs(i)+1) - U_R2(:,i) )/ &
                         ( x(ilocs(i)+1) - x(ilocs(i)) )
+      end if
     end do
 
     xlocs = xlocs + xoffset
