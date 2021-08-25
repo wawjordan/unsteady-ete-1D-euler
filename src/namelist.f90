@@ -2,7 +2,7 @@ module namelist
 
   use fluid_constants, only : R_gas, gamma
   use set_inputs, only : imax, i_high, i_low, ig_high, ig_low
-  use set_inputs, only : neq, xmin, xmax, n_ghost_cells
+  use set_inputs, only : neq, xmin, xmax, n_ghost
   use set_inputs, only : areaStar, area, darea
   use set_inputs, only : CFL, eps, tol, eps_roe, beta_lim, epsM, kappaM
   use set_inputs, only : max_iter, max_newton_iter, newton_tol
@@ -28,7 +28,7 @@ contains
     integer :: funit
     logical :: fexist
     logical :: fopen = .false.
-    namelist /grid/ imax, xmin, xmax, n_ghost_cells
+    namelist /grid/ imax, xmin, xmax, n_ghost
     namelist /geometry/ areaStar
     namelist /constants/ R_gas, gamma
     namelist /initial/ p0, T0
