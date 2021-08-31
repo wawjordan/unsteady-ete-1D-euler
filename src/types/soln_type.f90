@@ -3,12 +3,14 @@ module soln_type
   use set_precision, only : prec
   use set_constants, only : zero, one
   use set_inputs,    only : i_low, i_high, ig_low, ig_high
-  use set_inputs,    only : neq, max_iter
+  use set_inputs,    only : neq, max_iter, limiter_scheme
+  use limiter_type,  only : limiter_t, select_limiter
 
   implicit none
 
   type soln_t
 
+    real(prec), allocatable, dimension(:,:,:,:) :: LHS
     real(prec), allocatable, dimension(:,:) :: V
     real(prec), allocatable, dimension(:,:) :: U
     real(prec), allocatable, dimension(:,:) :: R
@@ -16,6 +18,8 @@ module soln_type
     real(prec), allocatable, dimension(:,:) :: F
     real(prec), allocatable, dimension(:,:) :: psi_p
     real(prec), allocatable, dimension(:,:) :: psi_m
+    real(prec), allocatable, dimension(:,:) :: dpsi_p
+    real(prec), allocatable, dimension(:,:) :: dpsi_m
     real(prec), allocatable, dimension(:,:) :: DE
     real(prec), allocatable, dimension(:)   :: asnd
     real(prec), allocatable, dimension(:)   :: mach
@@ -27,6 +31,7 @@ module soln_type
     real(prec), allocatable, dimension(:)   :: rnorm
     real(prec), allocatable, dimension(:)   :: DEnorm
     real(prec) :: time
+    type(limiter_t) :: lim
 
   end type soln_t
 
@@ -41,6 +46,8 @@ module soln_type
   subroutine allocate_soln( soln )
 
     type(soln_t), intent(inout) :: soln
+
+    allocate( soln%LHS( neq, neq, i_low:i_high, 3 ) )
 
     allocate( soln%V(  neq,  ig_low:ig_high ), &
               soln%U(  neq,  ig_low:ig_high ), &
@@ -57,9 +64,12 @@ module soln_type
               soln%rold( neq ),                &
               soln%rnorm( neq ),               &
               soln%DEnorm( neq ) )
-    allocate( soln%psi_p( neq, ig_low-1:ig_high ), &
-              soln%psi_m( neq, ig_low-1:ig_high )  )
+    allocate( soln%psi_p(  neq, ig_low-1:ig_high ), &
+              soln%psi_m(  neq, ig_low-1:ig_high ), &
+              soln%dpsi_p( neq, ig_low-1:ig_high ), &
+              soln%dpsi_m( neq, ig_low-1:ig_high ) )
 
+    soln%LHS    = zero
     soln%V      = zero
     soln%U      = zero
     soln%R      = zero
@@ -77,7 +87,11 @@ module soln_type
     soln%DEnorm = zero
     soln%psi_p  = zero
     soln%psi_m  = zero
+    soln%dpsi_p = zero
+    soln%dpsi_m = zero
     soln%time   = zero
+
+    call soln%lim%select_limiter(limiter_scheme)
 
   end subroutine allocate_soln
 
@@ -93,7 +107,8 @@ module soln_type
 
     type(soln_t), intent(inout) :: soln
 
-    deallocate(soln%V,      &
+    deallocate(soln%LHS,    &
+               soln%V,      &
                soln%U,      &
                soln%R,      &
                soln%S,      &
@@ -109,7 +124,9 @@ module soln_type
                soln%rnorm,  &
                soln%DEnorm, &
                soln%psi_p,  &
-               soln%psi_m   )
+               soln%psi_m,  &
+               soln%dpsi_p, &
+               soln%dpsi_m  )
 
   end subroutine deallocate_soln
 
