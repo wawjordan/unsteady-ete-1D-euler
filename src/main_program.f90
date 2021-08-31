@@ -5,11 +5,11 @@ program main_program
   use set_inputs, only : set_derived_inputs, xmin, xmax, neq
   use set_inputs, only : max_iter, tol, soln_save, res_save
   use set_inputs, only : leftV, rightV, leftU, rightU, flux_scheme
-  use set_inputs, only : limiter_freeze, res_out, cons
+  use set_inputs, only : limiter_scheme, limiter_freeze, res_out, cons
   use variable_conversion
   use time_integration, only : explicit_Euler, explicit_RK, calc_time_step, residual_norms
   use basic_boundaries, only : explicit_characteristic_bndry
-  use limiter_calc, only : select_limiter
+  use limiter_type, only : select_limiter
   use flux_calc, only : select_flux, flux_fun, calc_flux_1D
   use other_subroutines
   use geometry, only : setup_geometry, teardown_geometry
@@ -116,7 +116,7 @@ program main_program
   call setup_geometry(grid,soln)
   deallocate(xi)
   call select_flux()
-  call select_limiter()
+  !call select_limiter(limiter_scheme)
 
   call setup_exact_soln( ex_soln, grid, VL, VR)
   call initialize(grid,soln,VL,VR)
@@ -152,6 +152,7 @@ program main_program
     !call calculate_sources(soln,grid)
     call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
     call explicit_RK(grid,soln,VL,VR)
+
     !call explicit_characteristic_bndry(soln, VL, VR)
     !call update_states( soln )
 
@@ -173,7 +174,6 @@ program main_program
       call calc_de( soln, ex_soln, soln%DE, soln%DEnorm, pnorm, cons )
       call output_soln(grid,soln,ex_soln,j)
     end if
-
     call residual_norms(soln%R,soln%rnorm,soln%rinit)
 
     !if (all(soln%rnorm<tol) ) then
