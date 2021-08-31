@@ -6,7 +6,7 @@ module other_subroutines
   use set_inputs, only : epsM, kappaM
   use fluid_constants, only : gamma
   use variable_conversion
-  use limiter_calc, only : limiter_fun!, calc_consecutive_variations
+  !use limiter_calc, only : limiter_fun!, calc_consecutive_variations
   use soln_type, only : soln_t
   use exact_soln_type, only : exact_soln_t
   use grid_type, only : grid_t
@@ -50,7 +50,6 @@ module other_subroutines
     type(soln_t), intent(inout) :: soln
     real(prec), dimension(neq,i_low-1:i_high), intent(out) :: Left, Right
     integer :: i
-
     do i = i_low-1,i_high
       Left(:,i) = soln%V(:,i) + fourth*epsM*( &
             (one-kappaM)*soln%psi_p(:,i-1)*( soln%V(:,i) - soln%V(:,i-1) ) + &
@@ -77,65 +76,6 @@ module other_subroutines
    !                           - soln%V(:,i_low-1:i_high) ))
 
   end subroutine MUSCL_extrap
-
-
-!  subroutine MUSCL_extrap( V, left, right )
-!
-!    use set_inputs, only : limiter_freeze, psi_plus, psi_minus
-!    real(prec), dimension(neq,ig_low:ig_high), intent(in)  :: V
-!    real(prec), dimension(neq,i_low-1:i_high), intent(out) :: left, right
-!    !real(prec), dimension(neq,i_low-1:i_high), intent(inout) :: psi_plus, psi_minus
-!    !real(prec), dimension(neq,i_low-1:i_high) :: r_plus, r_minus
-!    real(prec), dimension(neq,ig_low:ig_high)  :: r_plus, r_minus
-!    !real(prec), dimension(neq) :: den
-!    integer :: i
-!
-    !do i = i_low-1,i_high
-    !  den = V(:,i+1) - V(:,i)
-    !  den = sign(one,den)*max(abs(den),1e-6_prec)
-    !  r_plus(:,i)   = ( V(:,i+2) - V(:,i+1) )/den
-    !  r_minus(:,i)  = ( V(:,i) - V(:,i-1) )/den
-    !  write(*,*) i, r_plus(1,i), r_plus(2,i), r_plus(3,i), &
-    !           &    r_minus(1,i),r_minus(2,i), r_minus(3,i)
-    !end do
-
-!    if (limiter_freeze) then
-!      continue
-!    else
-!      call calc_consecutive_variations(V,r_plus,r_minus)
-!      call limiter_fun(r_plus,psi_plus)
-!      call limiter_fun(r_minus,psi_minus)
-!    end if
-
-!    do i = i_low-1,i_high
-!      left(:,i) = V(:,i) + fourth*epsM*( &
-!         & (one-kappaM)*psi_plus(:,i-1)*(V(:,i)-V(:,i-1)) + &
-!         & (one+kappaM)*psi_minus(:,i)*(V(:,i+1)-V(:,i)) )
-!      right(:,i) = V(:,i+1) - fourth*epsM*( &
-!         & (one+kappaM)*psi_minus(:,i+1)*(V(:,i+1)-V(:,i)) + &
-!         & (one-kappaM)*psi_plus(:,i)*(V(:,i+2)-V(:,i+1)) )
-!    end do
-    !left(:,i_low-1)  = two*left(:,i_low) - left(:,i_low+1)
-    !left(:,i_high)   = two*left(:,i_high-1) - left(:,i_high-2)
-    !right(:,i_low-1) = two*right(:,i_low) - right(:,i_low+1)
-    !right(:,i_high)  = two*right(:,i_high-1) - right(:,i_high-2)
-    !left(:,i_low-1)  = V(:,i_low-1)
-    !left(:,i_high)   = V(:,i_high)
-    !right(:,i_low-1) = V(:,i_low)
-    !right(:,i_high)  = V(:,i_high+1)
-
-    !left(:,i_low-1)  = V(:,i_low-1)
-    !left(:,i_high)   = V(:,i_high)
-    !right(:,i_low-1) = V(:,i_low-1)
-    !right(:,i_high)  = V(:,i_high)
-!    call limit_primitives(left)
-!    call limit_primitives(right)
-    !write(*,*)
-    !do i = i_low-1,i_high
-    !  write(*,*) i, left(1,i), left(2,i), left(3,i), right(1,i), right(2,i), right(3,i)
-    !end do
-
-!  end subroutine MUSCL_extrap
 
   !================================== calc_de ==== ===========================80
   !>
