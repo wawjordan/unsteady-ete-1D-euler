@@ -104,12 +104,12 @@ module set_inputs
     write(*,'(A8,F20.14,A4)')  'T_0   = ', T0, ' [K]'
     write(*,'(A8,F20.14,A6)')  'A*    = ', areaStar, ' [m^2]'
 
-    allocate(leftV(neq,i_low-1:i_high))
-    allocate(rightV(neq,i_low-1:i_high))
-    allocate(leftU(neq,i_low-1:i_high))
-    allocate(rightU(neq,i_low-1:i_high))
-    allocate(psi_plus(neq,ig_low:ig_high))
-    allocate(psi_minus(neq,ig_low:ig_high))
+    !allocate(leftV(neq,i_low-1:i_high))
+    !allocate(rightV(neq,i_low-1:i_high))
+    !allocate(leftU(neq,i_low-1:i_high))
+    !allocate(rightU(neq,i_low-1:i_high))
+    !allocate(psi_plus(neq,ig_low:ig_high))
+    !allocate(psi_minus(neq,ig_low:ig_high))
 
   end subroutine set_derived_inputs
 
