@@ -65,7 +65,6 @@ module time_integration
       call calc_flux_1D(grid,soln)
       call calc_residual(grid,soln)
 
-
       do i = 1,neq
         soln%U(i,i_low:i_high) = &
           old_U(i,i_low:i_high) - k(j)* &
