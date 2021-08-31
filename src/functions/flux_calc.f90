@@ -51,8 +51,8 @@ subroutine calc_flux_1D(grid,soln)
   integer :: i
 
   call calculate_limiters(soln)
-
   call MUSCL_extrap(soln,Left,Right)
+
   !call limit_primitives(Left)
   !call limit_primitives(Right)
 
