@@ -1,7 +1,7 @@
 module variable_conversion
 
   use set_precision,   only : prec
-  use set_constants,   only : one, two, half, fourth
+  use set_constants,   only : zero, one, two, three, eight, half, fourth, eighth
   use fluid_constants, only : gamma, R_gas
   use set_inputs,      only : p0,T0, neq, ig_low, ig_high
   use soln_type,       only : soln_t
@@ -12,7 +12,8 @@ module variable_conversion
 
   public :: riemann_1, riemann_2, riemann_3, riem2prim, &
             update_states, update_mach, speed_of_sound, &
-            prim2cons, cons2prim, limit_primitives, isentropic_relations
+            prim2cons, cons2prim, limit_primitives,     &
+            isentropic_relations, cons2prim_1D
 
   contains
 
@@ -93,6 +94,15 @@ module variable_conversion
 
   end subroutine prim2cons
 
+  elemental subroutine prim2cons_1D( U1, U2, U3, V1, V2, V3 )
+    real(prec), intent(out) :: U1, U2, U3
+    real(prec), intent(in)  :: V1, V2, V3
+
+    U1 = V1
+    U2 = V1*V2
+    U3 = ( V3/(gamma - one) ) + half*V1*V2**2
+  end subroutine prim2cons_1D
+
   !================================ update_mach ==============================80
   !>
   !! Description:
@@ -129,6 +139,15 @@ module variable_conversion
 
   end subroutine cons2prim
 
+
+  elemental subroutine cons2prim_1D( U1, U2, U3, V1, V2, V3 )
+    real(prec), intent(in)  :: U1, U2, U3
+    real(prec), intent(out) :: V1, V2, V3
+
+    V1 = U1
+    V2 = U2/U1
+    V3 = (gamma - one)*U3 - half*(gamma - one)*U2**2/U1
+  end subroutine cons2prim_1D
   !========================= limit_primitives ================================80
   !>
   !! Description:
