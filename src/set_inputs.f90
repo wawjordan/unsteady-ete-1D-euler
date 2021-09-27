@@ -18,7 +18,7 @@ module set_inputs
   public :: set_derived_inputs, flux_scheme, limiter_scheme, cons
   public :: leftV, rightV, leftU, rightU, limiter_freeze, psi_plus, psi_minus
 
-  integer :: imax    = 128
+  integer :: imax    = 11
   integer :: i_low   = 10
   integer :: i_high  = 10
   integer :: ig_low  = 10
