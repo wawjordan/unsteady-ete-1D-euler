@@ -7,10 +7,12 @@ program main_program
   use set_inputs, only : leftV, rightV, leftU, rightU, flux_scheme
   use set_inputs, only : limiter_scheme, limiter_freeze, res_out, cons
   use variable_conversion
-  use time_integration, only : explicit_Euler, explicit_RK, calc_time_step, residual_norms
+  use time_integration, only : explicit_Euler, explicit_RK, calc_time_step, &
+                               residual_norms, implicit_Euler
   use basic_boundaries, only : explicit_characteristic_bndry
   use limiter_type, only : select_limiter
   use flux_calc, only : select_flux, flux_fun, calc_flux_1D
+  use flux_jacobians, only : calc_vl_dfdu, flux_jac_cons1D
   use other_subroutines
   use geometry, only : setup_geometry, teardown_geometry
   use init_problem, only : initialize
@@ -34,8 +36,8 @@ program main_program
   type( exact_soln_t ) :: ex_soln
   real(prec), dimension(3) :: VL, VR
   real(prec), dimension(:), allocatable :: xi
-  real(prec), dimension(3,3) :: A
-  real(prec), dimension(3) :: B
+  real(prec), dimension(3,3) :: A, B, C
+  !real(prec), dimension(3) :: B
   integer :: IPIV(3),INFO
 
   !A = transpose( reshape( (/ 8.0_prec, 1.0_prec, 6.0_prec, &
@@ -123,18 +125,73 @@ program main_program
   call output_soln(grid,soln,ex_soln,0)
 
 
-  !call calculate_sources(soln%V(3,:),grid%dAc,soln%src)
-!
-!  call MUSCL_extrap( soln%V, leftV, rightV )
-!  call prim2cons(leftU,leftV)
-!  call prim2cons(rightU,rightV)
-!  call flux_fun(leftU,rightU,soln%F)
+  call calc_vl_dfdu(soln%U(:,1),A,.true.)
+  write(*,*) 'A+ = '
+  do i = 1,neq
+      write(*,'(*(F10.4))') (A(i,j), j = 1,3)
+  end do
+  write(*,*)
+
+  call calc_vl_dfdu(soln%U(:,i_high),B,.false.)
+  write(*,*) 'A- = '
+  do i = 1,neq
+      write(*,'(*(F10.4))') (B(i,j), j = 1,3)
+  end do
+  write(*,*)
+
+  call flux_jac_cons1D(soln%U(:,1),C)
+  write(*,*) 'A = '
+  do i = 1,neq
+      write(*,'(*(F10.4))') (C(i,j), j = 1,3)
+  end do
+  write(*,*)
+  write(*,*) soln%U(:,1)
+
+  stop
 
   call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
-  !call calc_flux_1D(grid,soln)
+  call build_LHS_matrix(soln,grid)
+  write(*,*) 'LHS(:,:,1,1)'
+  do i = 1,neq
+    do j = 1,neq
+      write(*,*) soln%LHS(i,j,1,1)
+    end do
+  end do
+  write(*,*)
+  write(*,*) 'LHS(:,:,1,2)'
+  do i = 1,neq
+    do j = 1,neq
+      write(*,*) soln%LHS(i,j,1,2)
+    end do
+  end do
+  write(*,*)
+  write(*,*) 'LHS(:,:,1,3)'
+  do i = 1,neq
+    do j = 1,neq
+      write(*,*) soln%LHS(i,j,1,3)
+    end do
+  end do
+  write(*,*)
+  write(*,*) 'LHS(:,:,1,4)'
+  do i = 1,neq
+    do j = 1,neq
+      write(*,*) soln%LHS(i,j,1,4)
+    end do
+  end do
+  write(*,*)
+  write(*,*) 'LHS(:,:,1,5)'
+  do i = 1,neq
+    do j = 1,neq
+      write(*,*) soln%LHS(i,j,1,5)
+    end do
+  end do
+  stop
   !call explicit_euler(grid,soln%S,soln%dt,soln%F,soln%U,soln%R)
   !call explicit_characteristic_bndry(soln, VL, VR)
-  call explicit_RK(grid,soln,VL,VR)
+  !call explicit_RK(grid,soln,VL,VR)
+  call implicit_euler(grid,soln)
+  call update_states( soln )
+  write(*,*) minval(soln%dt)
   soln%time = soln%time + minval(soln%dt)
   call sample_exact_soln(ex_soln,grid,soln%time)
   call output_soln(grid,soln,ex_soln,1)
@@ -147,12 +204,14 @@ program main_program
   write(*,*) 'Relative Residual Norms:'
 !
 !
+  stop
   do j = 2,max_iter
 
     !call calculate_sources(soln,grid)
     call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
     call explicit_RK(grid,soln,VL,VR)
 
+    call implicit_euler(grid,soln)
     !call explicit_characteristic_bndry(soln, VL, VR)
     !call update_states( soln )
 
