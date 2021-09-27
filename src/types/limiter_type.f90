@@ -1,7 +1,7 @@
 module limiter_type
 
   use set_precision, only : prec
-  use set_constants, only : zero, one, two, three, four, half, fourth
+  use set_constants, only : small, zero, one, two, three, four, half, fourth
   use set_inputs, only : neq, beta_lim, n_ghost
   implicit none
 
@@ -111,12 +111,12 @@ contains
     real(prec), intent(out) :: dpsi
 
     psi = one + r
-    psi = sign(one, psi)*max(abs(psi),1.0e-12_prec)
+    psi = sign(one, psi)*max(abs(psi),small)
     psi = (r + abs(r))/psi
     psi = half*(one+sign(one,r))*psi
 
     dpsi = abs(r)*(one + r)**2
-    dpsi = sign(one, dpsi)*max(abs(dpsi),1.0e-12_prec)
+    dpsi = sign(one, dpsi)*max(abs(dpsi),small)
     dpsi = (r + abs(r))/dpsi
     dpsi = half*(one+sign(one,r))*dpsi
 
@@ -137,12 +137,12 @@ contains
     real(prec), intent(out) :: dpsi
 
     psi = one + r**2
-    psi = sign(one, psi)*max(abs(psi),1.0e-12_prec)
+    psi = sign(one, psi)*max(abs(psi),small)
     psi = ( (r + one)*r )/psi
     psi = half*(one+sign(one,r))*psi
 
     dpsi = (one + r**2)**2
-    dpsi = sign(one, dpsi)*max(abs(dpsi),1.0e-12_prec)
+    dpsi = sign(one, dpsi)*max(abs(dpsi),small)
     dpsi = ( one - (r - two)*r )/dpsi
     dpsi = half*(one+sign(one,r))*dpsi
 
