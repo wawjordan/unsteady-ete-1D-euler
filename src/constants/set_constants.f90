@@ -38,7 +38,8 @@ module set_constants
   real(prec), parameter :: tenth   = 0.1_prec
 
   real(prec), parameter :: near_zero = epsilon(one)
-  real(prec), parameter :: small   = tiny(one) !0.99e-30_prec
+  real(prec), parameter :: small   = epsilon(one)
+  !real(prec), parameter :: small   = tiny(one) !0.99e-30_prec
   real(prec), parameter :: large   = huge(one) !0.99e+30_prec
 
   real(prec)            :: pi      = 3.0_prec
