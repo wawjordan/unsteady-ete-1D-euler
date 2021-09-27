@@ -12,7 +12,7 @@ module time_integration
   private
 
   public :: calc_time_step, explicit_RK, calc_residual, residual_norms
-  public :: explicit_Euler
+  public :: explicit_Euler, implicit_Euler
   contains
 
   !============================= calc_time_step ==============================80
@@ -92,6 +92,50 @@ module time_integration
                   - grid%Ac(i)*grid%dx(i)*soln%S(:,i)
     end do
   end subroutine calc_residual
+
+
+  subroutine implicit_euler(grid,soln)
+    use block_matrix_operations, only : blk_bandec, blk_banbks
+    use other_subroutines, only : build_LHS_matrix
+    use flux_calc, only : calc_flux_1D
+    type(grid_t), intent(inout) :: grid
+    type(soln_t), intent(inout) :: soln
+    integer :: M1, M2, MP, MPL, N, NP, q
+    integer :: indx(1:i_high-i_low+1)
+    real(prec), allocatable :: AL(:,:,:,:), du(:,:)
+    real(prec) :: d
+    integer :: i
+
+    M1 = 2
+    M2 = 2
+    MP = M1 + M2 + 1
+    MPL = M1
+    N = i_high - i_low + 1
+    NP = N
+    q = neq
+
+    allocate( AL(q,q,N,M1), du(q,N) )
+
+    !call prim2cons(soln%U,soln%V)
+    call calc_flux_1D(grid,soln)
+    call calc_residual(grid,soln)
+    call build_LHS_matrix(soln,grid)
+
+    AL = zero
+    du = -soln%R(:,:)
+
+    call blk_bandec(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,d)
+
+    call blk_banbks(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,du)
+
+    do i = i_low, i_high
+      soln%U(:,i) = soln%U(:,i) + du(:,i)
+    end do
+
+    deallocate( AL, du )
+
+  end subroutine implicit_euler
+
 
 
   !============================= explicit_euler ==============================80
