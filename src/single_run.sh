@@ -9,7 +9,7 @@ limiter_str=""
 #if [ -f $summary ]; then
 #  rm -f "$summary"
 #fi
-imax=512 #16 32 64 128 256 512
+imax=11 #16 32 64 128 256 512
 p0=300.0
 T0=600.0
 flux=1
@@ -19,7 +19,7 @@ cfl=1.0 #0.1 0.5 0.9
 eps_roe=0.1
 eps_MUSCL=1.0
 kappa_MUSCL=-1.0
-maxk=500
+maxk=5
 Sout=16
 Rout=1
 disp_out=100
