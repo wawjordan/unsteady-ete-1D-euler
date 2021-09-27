@@ -47,7 +47,7 @@ module soln_type
 
     type(soln_t), intent(inout) :: soln
 
-    allocate( soln%LHS( neq, neq, i_low:i_high, 3 ) )
+    allocate( soln%LHS( neq, neq, i_low:i_high, 5 ) )
 
     allocate( soln%V(  neq,  ig_low:ig_high ), &
               soln%U(  neq,  ig_low:ig_high ), &
