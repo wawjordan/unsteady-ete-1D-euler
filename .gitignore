@@ -40,3 +40,6 @@
 # Build Folders
 build/*
 results/*
+
+# Local Backup files
+*.bkp
