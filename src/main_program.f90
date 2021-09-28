@@ -34,7 +34,7 @@ program main_program
   type( grid_t )      :: grid
   type( soln_t )      :: soln
   type( exact_soln_t ) :: ex_soln
-  real(prec), dimension(3) :: VL, VR
+  real(prec), dimension(3) :: VL, VR, f
   real(prec), dimension(:), allocatable :: xi
   real(prec), dimension(3,3) :: A, B, C
   !real(prec), dimension(3) :: B
@@ -70,35 +70,6 @@ program main_program
 
   VL = (/one,zero,one/)
   VR = (/0.125_prec,zero,0.1_prec/)
-  !VL = (/one,-two,0.4_prec/)
-  !VR = (/one,two,0.4_prec/)
-
-  !call allocate_dns_matrix(A_mat,3)
-
-  !call A_mat%add_array(1,1,3,3,array1)
-
-  !call gmres(A_mat,b,x)
-
-  !call A_mat%extract_array((/1,1/),(/3,3/),array2)
-
-  !do i = 1,3
-  !  write(*,*) array2(i,1)
-  !end do
-  !write(*,*)
-  !do i = 1,3
-  !  write(*,*) b(i)
-  !end do
-  !write(*,*)
-  !do i = 1,3
-  !  write(*,*) x(i)
-  !end do
-
-
-  !call A_mat%destroy
-
-  !stop
-
-
 
   open(50,file='temp.txt',status='unknown')
 
@@ -118,21 +89,19 @@ program main_program
   call setup_geometry(grid,soln)
   deallocate(xi)
   call select_flux()
-  !call select_limiter(limiter_scheme)
-
   call setup_exact_soln( ex_soln, grid, VL, VR)
   call initialize(grid,soln,VL,VR)
   call output_soln(grid,soln,ex_soln,0)
 
 
-  call calc_vl_dfdu(soln%U(:,1),A,.true.)
+  call calc_vl_dfdu(soln%U(:,1),f,A,.true.)
   write(*,*) 'A+ = '
   do i = 1,neq
       write(*,'(*(F10.4))') (A(i,j), j = 1,3)
   end do
   write(*,*)
 
-  call calc_vl_dfdu(soln%U(:,i_high),B,.false.)
+  call calc_vl_dfdu(soln%U(:,i_high),f,B,.false.)
   write(*,*) 'A- = '
   do i = 1,neq
       write(*,'(*(F10.4))') (B(i,j), j = 1,3)
