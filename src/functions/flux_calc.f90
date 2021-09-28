@@ -15,7 +15,7 @@ module flux_calc
 
   private
 
-  public :: flux_fun, select_flux, calc_flux_1D
+  public :: flux_fun, select_flux, calc_flux_1D, exact_flux_cons
 
   procedure( calc_flux ), pointer :: flux_fun
 
@@ -85,6 +85,17 @@ end subroutine calc_flux_1D
     end select
 
   end subroutine select_flux
+
+  subroutine exact_flux_cons(U,F)
+
+    real(prec), dimension(neq), intent(in)  :: U
+    real(prec), dimension(neq), intent(out) :: F
+
+    F(1) = U(2)
+    F(2) = U(2)**2/U(1) + (gamma-one)*( U(3) - half*U(2)**2/U(1) )
+    F(3) = gamma*U(2)*U(3)/U(1) - half*(gamma-one)*U(2)**3/U(1)**2
+
+  end subroutine exact_flux_cons
 
   !============================== van_leer_flux ==============================80
   !>
