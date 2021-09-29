@@ -6,12 +6,13 @@ module time_integration
   use grid_type, only : grid_t
   use soln_type, only : soln_t
   use variable_conversion
+  use residuals, only : calc_residual
 
   implicit none
 
   private
 
-  public :: calc_time_step, explicit_RK, calc_residual, residual_norms
+  public :: calc_time_step, explicit_RK
   public :: explicit_Euler, implicit_Euler
   contains
 
@@ -45,7 +46,6 @@ module time_integration
   subroutine explicit_RK( grid, soln, VL, VR )
     use flux_calc, only : calc_flux_1D
     use variable_conversion, only : update_states, prim2cons
-    use other_subroutines, only : MUSCL_extrap
     use basic_boundaries, only : explicit_characteristic_bndry
     type(grid_t), intent(inout) :: grid
     type(soln_t), intent(inout) :: soln
@@ -75,28 +75,11 @@ module time_integration
     end do
   end subroutine explicit_RK
 
-  !============================== calc_residual ==============================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  subroutine calc_residual(grid,soln)
-
-    type(grid_t), intent(inout) :: grid
-    type(soln_t), intent(inout) :: soln
-    integer :: i
-
-    do i = i_low,i_high
-      soln%R(:,i) = grid%Ai(i)*soln%F(:,i) &
-                  - grid%Ai(i-1)*soln%F(:,i-1) &
-                  - grid%Ac(i)*grid%dx(i)*soln%S(:,i)
-    end do
-  end subroutine calc_residual
 
 
   subroutine implicit_euler(grid,soln)
     use block_matrix_operations, only : blk_bandec, blk_banbks
-    use other_subroutines, only : build_LHS_matrix
+    use residuals, only : build_LHS_matrix
     use flux_calc, only : calc_flux_1D
     type(grid_t), intent(inout) :: grid
     type(soln_t), intent(inout) :: soln
@@ -136,14 +119,11 @@ module time_integration
 
   end subroutine implicit_euler
 
-
-
   !============================= explicit_euler ==============================80
   !>
   !! Description:
   !<
   !===========================================================================80
-
   subroutine explicit_euler( grid, src, dt, F, U, R )
 
     type(grid_t), intent(in) :: grid
@@ -175,27 +155,5 @@ module time_integration
                         (grid%Ac(i_low:i_high)*grid%dx(i_low:i_high))*R(3,:)
 
   end subroutine explicit_euler
-
-  !============================= residual_norms ==============================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  subroutine residual_norms( R, Rnorm, rinit )
-
-    real(prec), dimension(neq,i_low:i_high), intent(in) :: R
-    real(prec), dimension(neq), intent(in)  :: rinit
-    real(prec), dimension(neq), intent(out) :: Rnorm
-    real(prec) :: Linv
-    integer :: i
-
-    Linv = one/real(size(R,2),prec)
-
-    do i = 1,neq
-      Rnorm(i) = sqrt(Linv*sum(R(i,:)**2))
-    end do
-    Rnorm = Rnorm/rinit
-
-  end subroutine residual_norms
 
 end module time_integration
