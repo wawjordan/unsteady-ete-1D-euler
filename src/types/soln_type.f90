@@ -16,10 +16,8 @@ module soln_type
     real(prec), allocatable, dimension(:,:) :: R
     real(prec), allocatable, dimension(:,:) :: S
     real(prec), allocatable, dimension(:,:) :: F
-    real(prec), allocatable, dimension(:,:) :: psi_p
-    real(prec), allocatable, dimension(:,:) :: psi_m
-    real(prec), allocatable, dimension(:,:) :: dpsi_p
-    real(prec), allocatable, dimension(:,:) :: dpsi_m
+    real(prec), allocatable, dimension(:,:,:) :: duduL
+    real(prec), allocatable, dimension(:,:,:) :: duduR
     real(prec), allocatable, dimension(:,:) :: DE
     real(prec), allocatable, dimension(:)   :: asnd
     real(prec), allocatable, dimension(:)   :: mach
@@ -64,10 +62,8 @@ module soln_type
               soln%rold( neq ),                &
               soln%rnorm( neq ),               &
               soln%DEnorm( neq ) )
-    allocate( soln%psi_p(  neq, ig_low-1:ig_high ), &
-              soln%psi_m(  neq, ig_low-1:ig_high ), &
-              soln%dpsi_p( neq, ig_low-1:ig_high ), &
-              soln%dpsi_m( neq, ig_low-1:ig_high ) )
+    allocate( soln%duduL( 3, neq, i_low-1:i_high ), &
+              soln%duduR( 3, neq, i_low-1:i_high ) )
 
     soln%LHS    = zero
     soln%V      = zero
@@ -85,10 +81,8 @@ module soln_type
     soln%rold   = zero
     soln%rnorm  = zero
     soln%DEnorm = zero
-    soln%psi_p  = zero
-    soln%psi_m  = zero
-    soln%dpsi_p = zero
-    soln%dpsi_m = zero
+    soln%duduL  = zero
+    soln%duduR  = zero
     soln%time   = zero
 
     call soln%lim%select_limiter(limiter_scheme)
@@ -123,10 +117,8 @@ module soln_type
                soln%rold,   &
                soln%rnorm,  &
                soln%DEnorm, &
-               soln%psi_p,  &
-               soln%psi_m,  &
-               soln%dpsi_p, &
-               soln%dpsi_m  )
+               soln%duduL,  &
+               soln%duduR   )
 
   end subroutine deallocate_soln
 
