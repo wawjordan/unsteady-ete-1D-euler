@@ -6,8 +6,7 @@ module flux_calc
   use set_inputs, only : neq, i_low, i_high, ig_low, ig_high, eps_roe
   use set_inputs, only : n_ghost
   use variable_conversion, only : cons2prim, speed_of_sound, limit_primitives
-  use other_subroutines, only : MUSCL_extrap
-  use limiter_calc, only : calculate_limiters
+  use solution_reconstruction, only : MUSCL_extrap, MUSCL_extrap_lite
   use soln_type, only : soln_t
   use grid_type, only : grid_t
 
@@ -38,27 +37,28 @@ module flux_calc
 
 contains
 
-  !================================ calc_flux_1D =============================80
+  !========================= calc_flux_1D_explicit ===========================80
   !>
   !! Description:
   !<
   !===========================================================================80
-subroutine calc_flux_1D(grid,soln)
+  subroutine calc_flux_1D(grid,soln)
 
-  type(grid_t), intent(in)    :: grid
-  type(soln_t), intent(inout) :: soln
-  real(prec), dimension(neq,i_low-1:i_high) :: Left, Right
-  integer :: i
+    type(grid_t), intent(in)    :: grid
+    type(soln_t), intent(inout) :: soln
+    real(prec), dimension(neq,i_low-1:i_high) :: left, right
+    integer :: i
 
-  call calculate_limiters(soln)
-  call MUSCL_extrap(soln,Left,Right)
+    call MUSCL_extrap_lite(soln,Left,Right)
+    call cons2prim(Left,Left)
+    call cons2prim(Right,Right)
 
-  !call limit_primitives(Left)
-  !call limit_primitives(Right)
+    !call limit_primitives(Left)
+    !call limit_primitives(Right)
 
-  do i = i_low-1,i_high
-    call flux_fun(Left(:,i),Right(:,i),soln%F(:,i))
-  end do
+    do i = i_low-1,i_high
+      call flux_fun(Left(:,i),Right(:,i),soln%F(:,i))
+    end do
 
 end subroutine calc_flux_1D
 
