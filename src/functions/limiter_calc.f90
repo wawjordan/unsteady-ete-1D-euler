@@ -9,7 +9,7 @@ module limiter_calc
 
   private
 
-  public :: calculate_limiters
+  !public :: calculate_limiters
 
 contains
 
