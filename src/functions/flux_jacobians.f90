@@ -4,186 +4,82 @@ module flux_jacobians
   use set_constants,   only : small, zero, one, two, three, eight, &
                               half, fourth, eighth
   use fluid_constants, only : gamma
-  use set_inputs,      only : neq, ig_low, ig_high
+  use set_inputs,      only : neq, i_low, i_high, ig_low, ig_high, epsM, kappaM
   use soln_type,       only : soln_t
   use variable_conversion, only : cons2prim_1d, speed_of_sound
-  use flux_calc,       only : exact_flux_cons
+  !use flux_calc,       only : exact_flux_cons
 
   implicit none
 
   private
 
-  public :: VL_flux_jac, calc_vl_dfdu, flux_jac_cons1D, flux_jac_prim1D
+  public :: calc_vl_dfdu, flux_jac_cons1D, flux_jac_prim1D
 
   contains
 
-  subroutine duL_MUSCL_im1(Uim1,Ui,Uip1,psipm1,dpsipm1,dpsim,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Uim1, Ui, Uip1, &
-                                              psipm1, dpsipm1, dpsim
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den(neq)
-
-    den = Ui - Uim1
-    den = sign(one,den)*max(abs(den),small)
 
 
-    dudu = epsM*fourth*( &
-         (one-kappaM)*(dpsipm1*(Uip1-Ui)/den - psipm1) - &
-         (one+kappaM)*dpsim )
-
-  end subroutine duL_MUSCL_im1
-
-  subroutine duL_MUSCL_i(Uim1,Ui,Uip1,psipm1,psim,dpsipm1,dpsim,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Uim1, Ui, Uip1, &
-                                              psipm1, psim, dpsipm1, dpsim
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den1(neq), den2(neq)
-
-    den1 = Ui - Uim1
-    den1 = sign(one,den1)*max(abs(den1),small)
-    den2 = Uip1 - Ui
-    den2 = sign(one,den2)*max(abs(den2),small)
-
-
-    dudu = one - epsM*fourth*( &
-         (one-kappaM)*(dpsipm1*(Uip1-Uim1)/den1 - psipm1) - &
-         (one+kappaM)*(dpsim  *(Uip1-Uim1)/den2 - psim  ) )
-
-  end subroutine duL_MUSCL_i
-
-  subroutine duL_MUSCL_ip1(Uim1,Ui,Uip1,psim,dpsipm1,dpsim,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Uim1, Ui, Uip1, &
-                                              psim, dpsipm1, dpsim
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den(neq)
-
-    den = Uip1 - Ui
-    den = sign(one,den)*max(abs(den),small)
-
-
-    dudu = epsM*fourth*( &
-         (one-kappaM)*dpsipm1 - &
-         (one+kappaM)*(dpsim*(Ui-Uim1)/den - psim) )
-
-  end subroutine duL_MUSCL_ip1
-
-  subroutine duR_MUSCL_i(Ui,Uip1,Uip2,psip,dpsip,dpsimp1,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Ui, Uip1, Uip2, &
-                                              psip, dpsip, dpsimp1
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den(neq)
-
-    den = Uip1 - Ui
-    den = sign(one,den)*max(abs(den),small)
-
-
-    dudu = epsM*fourth*( &
-         (one-kappaM)*dpsimp1 - &
-         (one+kappaM)*(dpsip*(Uip2-Uip1)/den - psip) )
-
-  end subroutine duR_MUSCL_i
-
-  subroutine duR_MUSCL_ip1(Ui,Uip1,Uip2,psip,psimp1,dpsip,dpsimp1,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Ui, Uip1, Uip2, &
-                                              psip, psimp1, dpsip, dpsimp1
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den1(neq), den2(neq)
-
-    den1 = Uip2 - Uip1
-    den1 = sign(one,den1)*max(abs(den1),small)
-    den2 = Uip1 - Ui
-    den2 = sign(one,den2)*max(abs(den2),small)
-
-
-    dudu = one - epsM*fourth*( &
-         (one-kappaM)*(dpsimp1*(Uip2-Ui)/den1 - psimp1) - &
-         (one+kappaM)*(dpsip  *(Uip2-Ui)/den2 - psip  ) )
-
-  end subroutine duR_MUSCL_ip1
-
-  subroutine duR_MUSCL_ip2(Ui,Uip1,Uip2,psimp1,dpsip,dpsimp1,dudu)
-    use set_inputs, only : epsM, kappaM
-    real(prec), intent(in), dimension(neq) :: Ui, Uip1, Uip2, &
-                                              psimp1, dpsip, dpsimp1
-    real(prec), intent(out) :: dudu(neq)
-    real(prec) :: den(neq)
-
-    den = Uip2 - Uip1
-    den = sign(one,den)*max(abs(den),small)
-
-
-    dudu = epsM*fourth*( &
-         (one-kappaM)*(dpsimp1*(Uip1-Ui)/den - psimp1) - &
-         (one+kappaM)*dpsip )
-
-  end subroutine duR_MUSCL_ip2
-
-  subroutine VL_flux_jac(UL,UR,Uim1,Ui,Uip1,Uip2,psipm1,psip,psim,psimp1, &
-                    dpsipm1,dpsim,dpsip,dpsimp1, dfduim1,dfdui,dfduip1,dfduip2)
-    real(prec), intent(in), dimension(neq) :: UL, UR, Uim1, Ui, Uip1, Uip2, &
-                                              psipm1, psip, psim, psimp1, &
-                                              dpsipm1, dpsip, dpsim, dpsimp1
-    real(prec), intent(out), dimension(neq,neq) :: dfduim1, dfdui, dfduip1, &
-                                                   dfduip2
-    real(prec) :: fL(neq), fR(neq), dfduL(neq,neq), dfduR(neq,neq)
-    real(prec), dimension(neq) :: duLim1, duLi, duLip1, duRi, duRip1, duRip2
-    real(prec) :: rhoL, rhoR, uvelL, uvelR, presL, presR, avelL, avelR, ML, MR
-    integer :: i
-
-
-    call cons2prim_1D(UL(1),UL(2),UL(3),rhoL,uvelL,presL)
-    call cons2prim_1D(UR(1),UR(2),UR(3),rhoR,uvelR,presR)
-    call speed_of_sound(presL,rhoL,avelL)
-    call speed_of_sound(presR,rhoR,avelR)
-
-    ML = uvelL/avelL
-    MR = uvelR/avelR
-
-    dfduL = zero
-    dfduR = zero
-    dfduim1 = zero
-    dfdui   = zero
-    dfduip1 = zero
-    dfduip2 = zero
-
-    duLim1 = one
-    duLi   = one
-    duLip1 = one
-    duRi   = one
-    duRip1 = one
-    duRip2 = one
-
-
-
-    !call duL_MUSCL_im1(Uim1,Ui,Uip1,psipm1,dpsipm1,dpsim,duLim1)
-    !call duL_MUSCL_i(Uim1,Ui,Uip1,psipm1,psim,dpsipm1,dpsim,duLi)
-    !call duL_MUSCL_ip1(Uim1,Ui,Uip1,psim,dpsipm1,dpsim,duLip1)
-    !call duR_MUSCL_i(Ui,Uip1,Uip2,psip,dpsip,dpsimp1,duRi)
-    !call duR_MUSCL_ip1(Ui,Uip1,Uip2,psip,psimp1,dpsip,dpsimp1,duRip1)
-    !call duR_MUSCL_ip2(Ui,Uip1,Uip2,psimp1,dpsip,dpsimp1,duRip2)
-
-    call calc_vl_dfdu(UL,fL,dfduL,.true.)
-    call calc_vl_dfdu(UR,fR,dfduR,.false.)
-
-    do i = 1,neq
-      dfduim1(:,i) = dfduL(:,i)*duLim1(i)
-    end do
-    do i = 1,neq
-      dfdui(:,i) = dfduL(:,i)*duLi(i) + dfduR(:,i)*duRi(i)
-    end do
-    do i = 1,neq
-      dfduip1(:,i) = dfduL(:,i)*duLip1(i) + dfduR(:,i)*duRip1(i)
-    end do
-    do i = 1,neq
-      dfduip2(:,i) = dfduR(:,i)*duRip2(i)
-    end do
-
-  end subroutine VL_flux_jac
+!  subroutine VL_flux_jac(UL,UR,Uim1,Ui,Uip1,Uip2,psipm1,psip,psim,psimp1, &
+!                    dpsipm1,dpsim,dpsip,dpsimp1, dfduim1,dfdui,dfduip1,dfduip2)
+!    real(prec), intent(in), dimension(neq) :: UL, UR, Uim1, Ui, Uip1, Uip2, &
+!                                              psipm1, psip, psim, psimp1, &
+!                                              dpsipm1, dpsip, dpsim, dpsimp1
+!    real(prec), intent(out), dimension(neq,neq) :: dfduim1, dfdui, dfduip1, &
+!                                                   dfduip2
+!    real(prec) :: fL(neq), fR(neq), dfduL(neq,neq), dfduR(neq,neq)
+!    real(prec), dimension(neq) :: duLim1, duLi, duLip1, duRi, duRip1, duRip2
+!    real(prec) :: rhoL, rhoR, uvelL, uvelR, presL, presR, avelL, avelR, ML, MR
+!    integer :: i
+!
+!
+!    call cons2prim_1D(UL(1),UL(2),UL(3),rhoL,uvelL,presL)
+!    call cons2prim_1D(UR(1),UR(2),UR(3),rhoR,uvelR,presR)
+!    call speed_of_sound(presL,rhoL,avelL)
+!    call speed_of_sound(presR,rhoR,avelR)
+!
+!    ML = uvelL/avelL
+!    MR = uvelR/avelR
+!
+!    dfduL = zero
+!    dfduR = zero
+!    dfduim1 = zero
+!    dfdui   = zero
+!    dfduip1 = zero
+!    dfduip2 = zero
+!
+!    duLim1 = one
+!    duLi   = one
+!    duLip1 = one
+!    duRi   = one
+!    duRip1 = one
+!    duRip2 = one
+!
+!
+!
+!    !call duL_MUSCL_im1(Uim1,Ui,Uip1,psipm1,dpsipm1,dpsim,duLim1)
+!    !call duL_MUSCL_i(Uim1,Ui,Uip1,psipm1,psim,dpsipm1,dpsim,duLi)
+!    !call duL_MUSCL_ip1(Uim1,Ui,Uip1,psim,dpsipm1,dpsim,duLip1)
+!    !call duR_MUSCL_i(Ui,Uip1,Uip2,psip,dpsip,dpsimp1,duRi)
+!    !call duR_MUSCL_ip1(Ui,Uip1,Uip2,psip,psimp1,dpsip,dpsimp1,duRip1)
+!    !call duR_MUSCL_ip2(Ui,Uip1,Uip2,psimp1,dpsip,dpsimp1,duRip2)
+!
+!    call calc_vl_dfdu(UL,fL,dfduL,.true.)
+!    call calc_vl_dfdu(UR,fR,dfduR,.false.)
+!
+!    do i = 1,neq
+!      dfduim1(:,i) = dfduL(:,i)*duLim1(i)
+!    end do
+!    do i = 1,neq
+!      dfdui(:,i) = dfduL(:,i)*duLi(i) + dfduR(:,i)*duRi(i)
+!    end do
+!    do i = 1,neq
+!      dfduip1(:,i) = dfduL(:,i)*duLip1(i) + dfduR(:,i)*duRip1(i)
+!    end do
+!    do i = 1,neq
+!      dfduip2(:,i) = dfduR(:,i)*duRip2(i)
+!    end do
+!
+!  end subroutine VL_flux_jac
 
 
   subroutine calc_vl_dfdu(U,f,dfdu,mask)
@@ -247,7 +143,7 @@ module flux_jacobians
     dfdu(2,3) = pm*(one/gamma)*(fb*da3 + fa*db3)
     dfdu(3,3) = (one/gg2)*(half*fb**2*da3 + fa*fb*db3)
 
-    call exact_flux_cons(U,f1)
+    !call exact_flux_cons(U,f1)
     call flux_jac_cons1D(U,dfdu1)
 
     sub  = merge( one, zero, ( abs(M)<one ) )
