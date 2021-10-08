@@ -7,7 +7,7 @@ module flux_jacobians
   use set_inputs,      only : neq, i_low, i_high, ig_low, ig_high, epsM, kappaM
   use soln_type,       only : soln_t
   use variable_conversion, only : cons2prim_1d, speed_of_sound
-  !use flux_calc,       only : exact_flux_cons
+  use flux_calc,       only : exact_flux_cons
 
   implicit none
 
@@ -143,7 +143,7 @@ module flux_jacobians
     dfdu(2,3) = pm*(one/gamma)*(fb*da3 + fa*db3)
     dfdu(3,3) = (one/gg2)*(half*fb**2*da3 + fa*fb*db3)
 
-    !call exact_flux_cons(U,f1)
+    call exact_flux_cons(U,f1)
     call flux_jac_cons1D(U,dfdu1)
 
     sub  = merge( one, zero, ( abs(M)<one ) )
