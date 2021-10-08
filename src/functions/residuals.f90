@@ -5,7 +5,8 @@ module residuals
   use set_inputs,    only : neq, i_low, i_high, ig_low, ig_high
   use grid_type, only : grid_t
   use soln_type, only : soln_t
-  use variable_conversion
+  use solution_reconstruction, only : MUSCL_extrap
+  use flux_jacobians, only : calc_vl_dfdu
 
   implicit none
 
@@ -57,60 +58,331 @@ module residuals
   subroutine build_LHS_matrix(soln,grid)
     type(soln_t), intent(inout) :: soln
     type(grid_t), intent(in)    :: grid
-    real(prec), dimension(neq,i_low-1:i_high) :: Left, Right
-    real(prec), dimension(neq,neq) :: dfduim1, dfdui, dfduip1, dfduip2
-    real(prec), dimension(neq,neq) :: dgduim1, dgdui, dgduip1, dgduip2
-    real(prec) :: vt
-    integer :: i, j
+    real(prec), dimension(neq,i_low-1:i_high) :: UL,UR
+    real(prec), dimension(neq) :: FL0, FR0, FL1, FR1, &
+                                  DtmpL0, DtmpR0, DtmpL1, DtmpR1
+    real(prec), dimension(neq,neq) :: tmp, dfduL0, dfduR0, dfduL1, dfduR1
+    integer :: ii, jj, i, j
 
-    !call MUSCL_extrap(soln,Left,Right)
-    ! left boundary -> calculate dfdu_{i-1/2} wrt i, i+1, & i+2
-!    i = i_low-1
-!    call VL_flux_jac( Left(:,i), Right(:,i), &
-!            soln%U(:,i-1), soln%U(:,i), soln%U(:,i+1), soln%U(:,i+2), &
-!            soln%psi_p(:,i-1), soln%psi_p(:,i), &
-!            soln%psi_m(:,i), soln%psi_m(:,i+1), &
-!            soln%dpsi_p(:,i-1), soln%dpsi_p(:,i), &
-!            soln%dpsi_m(:,i), soln%dpsi_m(:,i+1), &
-!            dfduim1, dfdui, dfduip1, dfduip2 )
-!    soln%LHS(:,:,i+1,3) = -grid%Ai(i)*dfduim1    !A*df{i-1/2}/du{1}
-!    soln%LHS(:,:,i+1,4) = -grid%Ai(i)*dfdui  !A*df{i-1/2}/du{2}
-!    soln%LHS(:,:,i+1,5) = -grid%Ai(i)*dfduip1  !A*df{i-1/2}/du{3}
-!    do i = i_low,i_high-1
-!      !write(*,*) soln%psi_p(1,i), soln%psi_m(1,i)
-!      call VL_flux_jac( Left(:,i), Right(:,i), &
-!              soln%U(:,i-1), soln%U(:,i), soln%U(:,i+1), soln%U(:,i+2), &
-!              soln%psi_p(:,i-1), soln%psi_p(:,i), &
-!              soln%psi_m(:,i), soln%psi_m(:,i+1), &
-!              soln%dpsi_p(:,i-1), soln%dpsi_p(:,i), &
-!              soln%dpsi_m(:,i), soln%dpsi_m(:,i+1), &
-!              dfduim1, dfdui, dfduip1, dfduip2 )
-!      do j = 1,neq
-!        write(*,*) dfdui(j,:)
-!      end do
-!      write(*,*)
-!      vt = grid%Ac(i)*grid%dx(i)/soln%dt(i)
-!      soln%LHS(:,:,i,1) = soln%LHS(:,:,i,1) + grid%Ai(i)*dfduim1
-!      soln%LHS(:,:,i,2) = soln%LHS(:,:,i,2) + grid%Ai(i)*dfdui
-!      soln%LHS(:,:,i,3) = vt + soln%LHS(:,:,i,3) + grid%Ai(i)*dfduip1
-!      soln%LHS(:,:,i,4) = soln%LHS(:,:,i,4) + grid%Ai(i)*dfduip2
-!
-!      soln%LHS(:,:,i+1,2) = -grid%Ai(i)*dfduim1
-!      soln%LHS(:,:,i+1,3) = -grid%Ai(i)*dfdui
-!      soln%LHS(:,:,i+1,4) = -grid%Ai(i)*dfduip1
-!      soln%LHS(:,:,i+1,5) = -grid%Ai(i)*dfduip2
-!    end do
-!    i = i_high+1
-!    call VL_flux_jac( Left(:,i), Right(:,i), &
-!            soln%U(:,i-1), soln%U(:,i), soln%U(:,i+1), soln%U(:,i+2), &
-!            soln%psi_p(:,i-1), soln%psi_p(:,i), &
-!            soln%psi_m(:,i), soln%psi_m(:,i+1), &
-!            soln%dpsi_p(:,i-1), soln%dpsi_p(:,i), &
-!            soln%dpsi_m(:,i), soln%dpsi_m(:,i+1), &
-!            dfduim1, dfdui, dfduip1, dfduip2 )
-!      soln%LHS(:,:,i,1) = soln%LHS(:,:,i,1) + grid%Ai(i)*dfdui
-!      soln%LHS(:,:,i,2) = soln%LHS(:,:,i,2) + grid%Ai(i)*dfduip1
-!      soln%LHS(:,:,i,3) = soln%LHS(:,:,i,3) + grid%Ai(i)*dfduip2
+    call MUSCL_extrap(soln,UL,UR)
+
+    !do i = i_low-1,i_high
+    !write(*,*) i, UL(:,i)
+    !end do
+    !write(*,*)
+    !do i = i_low-1,i_high
+    !write(*,*) i, UL(:,i)
+    !end do
+    !stop
+
+    !==========================================================================
+    !------------------------------ Row 1 -------------------------------------
+    !==========================================================================
+    i = i_low
+      call calc_vl_dfdu(UL(:,i-1),FL0,dfduL0,.true.) ! dfdu_L_(i-1/2)
+      call calc_vl_dfdu(UR(:,i-1),FR0,dfduR0,.false.)! dfdu_R_(i-1/2)
+      call calc_vl_dfdu(UL(:,i),FL1,dfduL1,.true.)   ! dfdu_L_(i+1/2)
+      call calc_vl_dfdu(UR(:,i),FR1,dfduR1,.false.)  ! dfdu_R_(i+1/2)
+
+      soln%F(:,i-1) = FL0 + FR0                      ! f_(i-1/2)
+      soln%F(:,i)   = FL1 + FR1                      ! f_(i+1/2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      !do ii = 1,neq
+      !  write(*,*) (tmp(ii,jj),jj=1,3)
+      !end do
+      !stop
+
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,3,i-1)      ! A_(i-1/2)*duRdu_(i+1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,3,i)          ! A_(i+1/2)*duLdu_(i+1)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,2,i)          ! A_(i+1/2)*duRdu_(i+1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                     - dfduR0(ii,jj)*DtmpR0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,3,i)          ! A_(i+1/2)*duRdu_(i+2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduR1(ii,jj)*DtmpR1(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+
+    !==========================================================================
+    !------------------------------ Row 2 -------------------------------------
+    !==========================================================================
+    i = i_low+1
+      FL0 = FL1
+      FR0 = FR1
+      dfduL0 = dfduL1                                ! dfdu_L_(i-1/2)
+      dfduR0 = dfduR1                                ! dfdu_R_(i-1/2)
+      call calc_vl_dfdu(UL(:,i),FL1,dfduL1,.true.)   ! dfdu_L_(i+1/2)
+      call calc_vl_dfdu(UR(:,i),FR1,dfduR1,.false.)  ! dfdu_R_(i+1/2)
+
+      soln%F(:,i-1) = FL0 + FR0                      ! f_(i-1/2)
+      soln%F(:,i)   = FL1 + FR1                      ! f_(i+1/2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,2,i-1)      ! A_(i-1/2)*duLdu_(i-1)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,1,i-1)      ! A_(i-1/2)*duRdu_(i-1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,1,i)          ! A_(i+1/2)*duLdu_(i-1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,3,i-1)      ! A_(i-1/2)*duRdu_(i+1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,3,i)          ! A_(i+1/2)*duLdu_(i+1)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,2,i)          ! A_(i+1/2)*duRdu_(i+1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                     - dfduR0(ii,jj)*DtmpR0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,3,i)          ! A_(i+1/2)*duRdu_(i+2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduR1(ii,jj)*DtmpR1(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+
+    !==========================================================================
+    !------------------------------ Rows 3:N-2 --------------------------------
+    !==========================================================================
+    do i = i_low+2,i_high-2
+      FL0 = FL1
+      FR0 = FR1
+      dfduL0 = dfduL1                                ! dfdu_L_(i-1/2)
+      dfduR0 = dfduR1                                ! dfdu_R_(i-1/2)
+      call calc_vl_dfdu(UL(:,i),FL1,dfduL1,.true.)   ! dfdu_L_(i+1/2)
+      call calc_vl_dfdu(UR(:,i),FR1,dfduR1,.false.)  ! dfdu_R_(i+1/2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,1,i-1)      ! A_(i-1/2)*duLdu_(i-2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = - dfduL0(ii,jj)*DtmpL0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,2,i-1)      ! A_(i-1/2)*duLdu_(i-1)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,1,i-1)      ! A_(i-1/2)*duRdu_(i-1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,1,i)          ! A_(i+1/2)*duLdu_(i-1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+
+
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,3,i-1)      ! A_(i-1/2)*duRdu_(i+1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,3,i)          ! A_(i+1/2)*duLdu_(i+1)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,2,i)          ! A_(i+1/2)*duRdu_(i+1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                     - dfduR0(ii,jj)*DtmpR0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,3,i)          ! A_(i+1/2)*duRdu_(i+2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduR1(ii,jj)*DtmpR1(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+    end do
+
+    !==========================================================================
+    !------------------------------ Row N-1 -----------------------------------
+    !==========================================================================
+    i = i_high-1
+      FL0 = FL1
+      FR0 = FR1
+      dfduL0 = dfduL1                                ! dfdu_L_(i-1/2)
+      dfduR0 = dfduR1                                ! dfdu_R_(i-1/2)
+      call calc_vl_dfdu(UL(:,i),FL1,dfduL1,.true.)   ! dfdu_L_(i+1/2)
+      call calc_vl_dfdu(UR(:,i),FR1,dfduR1,.false.)  ! dfdu_R_(i+1/2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,1,i-1)      ! A_(i-1/2)*duLdu_(i-2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = - dfduL0(ii,jj)*DtmpL0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,2,i-1)      ! A_(i-1/2)*duLdu_(i-1)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,1,i-1)      ! A_(i-1/2)*duRdu_(i-1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,1,i)          ! A_(i+1/2)*duLdu_(i-1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+
+
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,3,i-1)      ! A_(i-1/2)*duRdu_(i+1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,3,i)          ! A_(i+1/2)*duLdu_(i+1)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,2,i)          ! A_(i+1/2)*duRdu_(i+1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                     - dfduR0(ii,jj)*DtmpR0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+
+    !==========================================================================
+    !------------------------------ Row N -------------------------------------
+    !==========================================================================
+    i = i_high
+      FL0 = FL1
+      FR0 = FR1
+      dfduL0 = dfduL1                                ! dfdu_L_(i-1/2)
+      dfduR0 = dfduR1                                ! dfdu_R_(i-1/2)
+      call calc_vl_dfdu(UL(:,i),FL1,dfduL1,.true.)   ! dfdu_L_(i+1/2)
+      call calc_vl_dfdu(UR(:,i),FR1,dfduR1,.false.)  ! dfdu_R_(i+1/2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,1,i-1)      ! A_(i-1/2)*duLdu_(i-2)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = - dfduL0(ii,jj)*DtmpL0(ii)
+        end do
+      end do
+      soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,2,i-1)      ! A_(i-1/2)*duLdu_(i-1)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,1,i-1)      ! A_(i-1/2)*duRdu_(i-1)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,1,i)          ! A_(i+1/2)*duLdu_(i-1)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+
+
+      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+
+      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+
+      do jj = 1,3
+        do ii = 1,neq
+          tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
+                   - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
+        end do
+      end do
+      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+
+      do j = 1,5
+        do i = i_low,i_high
+          do jj = 1,neq
+            do ii = 1,neq
+              write(*,*) soln%LHS(ii,jj,i,j)
+            end do
+          end do
+        end do
+      end do
+
+      stop
 
   end subroutine build_LHS_matrix
 
