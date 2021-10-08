@@ -14,6 +14,7 @@ program main_program
   use flux_calc, only : select_flux, flux_fun, calc_flux_1D
   use flux_jacobians, only : calc_vl_dfdu, flux_jac_cons1D
   use other_subroutines
+  use residuals, only : build_LHS_matrix, calc_residual
   use geometry, only : setup_geometry, teardown_geometry
   use init_problem, only : initialize
   use namelist, only : read_namelist
@@ -62,7 +63,19 @@ program main_program
 
   write(header_str1,*) " Iter  |   ||density||    |"// &
   & "   ||velocity||    |   ||pressure||    |"
-  call output_soln(grid,soln,ex_soln,0)
+  !call output_soln(grid,soln,ex_soln,0)
+
+  !do j = ig_low,ig_high
+  !   write(*,*) grid%xc(j)
+  !end do
+  !stop
+
+  call build_LHS_matrix(soln,grid)
+  call calc_residual(grid,soln)
+  do j = i_low,i_high
+     write(*,*) - soln%U(:,j)
+  end do
+  stop
   call calc_vl_dfdu(soln%U(:,1),f,A,.true.)
   write(*,*) 'A+ = '
   do i = 1,neq
