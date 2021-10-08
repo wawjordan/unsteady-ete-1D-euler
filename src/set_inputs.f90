@@ -40,14 +40,14 @@ module set_inputs
   real(prec) :: xmax       = one
   real(prec) :: CFL        = 0.1_prec
   integer :: flux_scheme   = 1
-  integer :: limiter_scheme = 2
+  integer :: limiter_scheme = 1
   real(prec) :: beta_lim = 2
   integer :: soln_save     = 150000
   integer :: res_save      = 10
   integer :: res_out       = 1000
   real(prec) :: eps_roe    = 0.1_prec
   real(prec) :: epsM       = one
-  real(prec) :: kappaM     = -one
+  real(prec) :: kappaM     = one
   logical :: limiter_freeze = .false.
   logical :: cons           = .true.
   real(prec), dimension(:,:), allocatable :: leftV, rightV, leftU, rightU
