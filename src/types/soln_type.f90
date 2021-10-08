@@ -62,8 +62,8 @@ module soln_type
               soln%rold( neq ),                &
               soln%rnorm( neq ),               &
               soln%DEnorm( neq ) )
-    allocate( soln%duduL( 3, neq, i_low-1:i_high ), &
-              soln%duduR( 3, neq, i_low-1:i_high ) )
+    allocate( soln%duduL( neq, 3, i_low-1:i_high ), &
+              soln%duduR( neq, 3, i_low-1:i_high ) )
 
     soln%LHS    = zero
     soln%V      = zero
