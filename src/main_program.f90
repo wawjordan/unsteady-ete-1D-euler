@@ -14,7 +14,7 @@ program main_program
   use flux_calc, only : select_flux, flux_fun, calc_flux_1D
   use flux_jacobians, only : calc_vl_dfdu, flux_jac_cons1D
   use other_subroutines
-  use residuals, only : build_LHS_matrix, calc_residual
+  use residuals, only : build_LHS_matrix, build_LHS_test, calc_residual
   use geometry, only : setup_geometry, teardown_geometry
   use init_problem, only : initialize
   use namelist, only : read_namelist
@@ -61,11 +61,8 @@ program main_program
   & "   ||velocity||    |   ||pressure||    |"
   !call output_soln(grid,soln,ex_soln,0)
 
-  do j = ig_low,ig_high
-     write(*,*) grid%xc(j)
-  end do
-  stop
-  call build_LHS_matrix(soln,grid)
+  call build_LHS_test(soln)
+  !call build_LHS_matrix(soln,grid)
   stop
  ! call block_band2full(soln%LHS,A_out,2,2,3,11)
  ! do i = 1,imax*neq
