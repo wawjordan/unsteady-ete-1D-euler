@@ -47,21 +47,21 @@ module soln_type
 
     allocate( soln%LHS( neq, neq, i_low:i_high, 5 ) )
 
-    allocate( soln%V(  neq,  ig_low:ig_high ), &
-              soln%U(  neq,  ig_low:ig_high ), &
-              soln%R(  neq,   i_low:i_high ),  &
-              soln%S(  neq,   i_low:i_high ),  &
-              soln%F(  neq, i_low-1:i_high ),  &
-              soln%DE( neq,   i_low:i_high ),  &
-              soln%asnd( ig_low:ig_high ),     &
-              soln%mach( ig_low:ig_high ),     &
-              soln%temp( ig_low:ig_high ),     &
-              soln%lambda( ig_low:ig_high ),   &
-              soln%dt( i_low:i_high ),         &
-              soln%rinit( neq ),               &
-              soln%rold( neq ),                &
-              soln%rnorm( neq ),               &
-              soln%DEnorm( neq ) )
+    allocate( soln%V(  neq,  ig_low:ig_high ), & ! primitive (cell)
+              soln%U(  neq,  ig_low:ig_high ), & ! conserved (cell)
+              soln%R(  neq,   i_low:i_high ),  & ! residual  (cell)
+              soln%S(  neq,   i_low:i_high ),  & ! source    (cell)
+              soln%F(  neq, i_low-1:i_high ),  & ! flux      (face)
+              soln%DE( neq,   i_low:i_high ),  & ! error     (cell)
+              soln%asnd( ig_low:ig_high ),     & ! sound     (cell)
+              soln%mach( ig_low:ig_high ),     & ! mach #    (cell)
+              soln%temp( ig_low:ig_high ),     & ! temp      (cell)
+              soln%lambda( ig_low:ig_high ),   & ! eig       (cell)
+              soln%dt( i_low:i_high ),         & ! dt        (cell)
+              soln%rinit( neq ),               & ! res init
+              soln%rold( neq ),                & ! old res
+              soln%rnorm( neq ),               & ! normalized res
+              soln%DEnorm( neq ) )               ! normalized error
     allocate( soln%duduL( neq, 3, i_low-1:i_high ), &
               soln%duduR( neq, 3, i_low-1:i_high ) )
 
