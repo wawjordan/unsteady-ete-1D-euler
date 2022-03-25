@@ -66,14 +66,23 @@ module residuals
 
     call MUSCL_extrap(soln,UL,UR)
 
-    !do i = i_low-1,i_high
-    !write(*,*) i, UL(:,i)
-    !end do
-    !write(*,*)
-    !do i = i_low-1,i_high
-    !write(*,*) i, UL(:,i)
-    !end do
-    !stop
+    do i = i_low-1,i_high
+    write(*,*) i, soln%U(:,i)
+    end do
+    write(*,*)
+    do i = i_low,i_high+1
+    write(*,*) i, soln%U(:,i)
+    end do
+    write(*,*) 'MUSCL:'
+
+    do i = i_low-1,i_high
+    write(*,*) i, UL(:,i)
+    end do
+    write(*,*)
+    do i = i_low-1,i_high
+    write(*,*) i, UL(:,i)
+    end do
+    stop
 
     !==========================================================================
     !------------------------------ Row 1 -------------------------------------
@@ -100,10 +109,10 @@ module residuals
         end do
       end do
       soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
-      !do ii = 1,neq
-      !  write(*,*) (tmp(ii,jj),jj=1,3)
-      !end do
-      !stop
+      do ii = 1,neq
+        write(*,*) (tmp(ii,jj),jj=1,3)
+      end do
+      stop
 
       DtmpR0 = grid%Ai(i-1)*soln%duduR(:,3,i-1)      ! A_(i-1/2)*duRdu_(i+1)
 
@@ -371,7 +380,7 @@ module residuals
         end do
       end do
       soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
-
+!stop
       do j = 1,5
         do i = i_low,i_high
           do jj = 1,neq
