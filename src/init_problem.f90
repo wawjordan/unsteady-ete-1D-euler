@@ -30,15 +30,18 @@ module init_problem
     real(prec), intent(in) :: U_L(neq), U_R(neq)
     real(prec) :: p0, bnd_a, bnd_b, pStar, uStar, xstar, t
 
-    where(grid%xc<=0.0_prec)
-      soln%V(1,:) = U_L(1)
-      soln%V(2,:) = U_L(2)
-      soln%V(3,:) = U_L(3)
-    elsewhere
-      soln%V(1,:) = U_R(1)
-      soln%V(2,:) = U_R(2)
-      soln%V(3,:) = U_R(3)
-    end where
+  !  where(grid%xc<=0.0_prec)
+  !    soln%V(1,:) = U_L(1)
+  !    soln%V(2,:) = U_L(2)
+  !    soln%V(3,:) = U_L(3)
+  !  elsewhere
+  !    soln%V(1,:) = U_R(1)
+  !    soln%V(2,:) = U_R(2)
+  !    soln%V(3,:) = U_R(3)
+  !  end where
+    soln%V(1,:) = one-0.1_prec*grid%xc**2
+    soln%V(2,:) = grid%xc**2-1
+    soln%V(3,:) = one-0.2_prec*grid%xc**2
 
     call prim2cons(soln%U,soln%V)
     call update_states( soln )
