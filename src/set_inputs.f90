@@ -57,7 +57,7 @@ module set_inputs
 
   !=================================== area ==================================80
   !>
-  !! Description: Calculates area distribution for nozzle.
+  !! Description: Area distribution as a function of axial distance
   !<
   !===========================================================================80
   function area(x)
@@ -71,7 +71,7 @@ module set_inputs
 
   !=================================== darea =================================80
   !>
-  !! Description: Calculates area derivative distribution for nozzle.
+  !! Description: dA/dx
   !<
   !===========================================================================80
   function darea(x)
