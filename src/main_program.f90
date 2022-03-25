@@ -18,6 +18,7 @@ program main_program
   use geometry, only : setup_geometry, teardown_geometry
   use init_problem, only : initialize
   use namelist, only : read_namelist
+  use utilities, only : block_band2full, block_band2sparse1
   use grid_type
   use soln_type
   use exact_soln_type, only : exact_soln_t, setup_exact_soln, &
@@ -32,27 +33,22 @@ program main_program
   type( soln_t )      :: soln
   type( exact_soln_t ) :: ex_soln
   real(prec), dimension(3) :: VL, VR, f
-  real(prec), dimension(:), allocatable :: xi
   real(prec), dimension(3,3) :: A, B, C
-  !real(prec), dimension(3) :: B
+  real(prec), dimension(33,33) :: A_out
   integer :: IPIV(3),INFO
 
   pnorm = 1
   j = 0
 
-  VL = (/one,zero,one/)
-  VR = (/0.125_prec,zero,0.1_prec/)
+  VL = (/one,0.1_prec,one/)
+  VR = (/0.125_prec,0.1_prec,0.1_prec/)
 
   call set_derived_constants
   call set_fluid_constants
   call read_namelist('input.nml')
   call output_file_headers
   call set_derived_inputs
-  allocate(xi(imax))
-  xi = [ (xmin + real(i,prec)/real(imax,prec)*(xmax-xmin), &
-          i=i_low-1,i_high) ]
   call setup_geometry(grid,soln)
-  deallocate(xi)
   call select_flux()
   call setup_exact_soln( ex_soln, grid, VL, VR)
   call initialize(grid,soln,VL,VR)
@@ -65,17 +61,22 @@ program main_program
   & "   ||velocity||    |   ||pressure||    |"
   !call output_soln(grid,soln,ex_soln,0)
 
-  !do j = ig_low,ig_high
-  !   write(*,*) grid%xc(j)
-  !end do
-  !stop
-
+  do j = ig_low,ig_high
+     write(*,*) grid%xc(j)
+  end do
+  stop
   call build_LHS_matrix(soln,grid)
+  stop
+ ! call block_band2full(soln%LHS,A_out,2,2,3,11)
+ ! do i = 1,imax*neq
+ !     write(*,*) (A_out(i,j), j = 1,imax*neq)
+ ! end do
+  call block_band2sparse1(soln%LHS,2,2,3,11)
+
   call calc_residual(grid,soln)
   do j = i_low,i_high
      write(*,*) - soln%U(:,j)
   end do
-  stop
   call calc_vl_dfdu(soln%U(:,1),f,A,.true.)
   write(*,*) 'A+ = '
   do i = 1,neq
@@ -98,7 +99,6 @@ program main_program
   write(*,*)
   write(*,*) soln%U(:,1)
 
-  stop
 
 !!!  call calc_time_step(grid%dx,soln%V,soln%asnd,soln%lambda,soln%dt)
 !!!  call build_LHS_matrix(soln,grid)
