@@ -12,7 +12,7 @@ module residuals
 
   private
 
-  public :: calc_residual, residual_norms, build_LHS_matrix
+  public :: calc_residual, residual_norms, build_LHS_matrix, build_LHS_test
   contains
 
   !============================== calc_residual ==============================80
@@ -54,6 +54,92 @@ module residuals
     Rnorm = Rnorm/rinit
 
   end subroutine residual_norms
+
+  subroutine mark_diag(M,val)
+    real(prec), dimension(:,:), intent(inout) :: M
+    real(prec), intent(in) :: val
+    integer :: n, i, j
+
+    n = size(M,1)
+
+    do j = 1,n
+      do i = 1,n
+        if (i == j) then
+          M(i,j) = val
+        else
+          M(i,j) = -val
+        end if
+      end do
+    end do
+  end subroutine mark_diag
+
+  subroutine build_LHS_test(soln)
+    type(soln_t), intent(inout) :: soln
+    integer :: i, j, ii, jj
+    !------------------------------ Row 1 -------------------------------------
+    i = i_low
+      !soln%LHS(:,:,i,3) = soln                       ! dRdu_(i)
+      call mark_diag( soln%LHS(:,:,i,3), 3000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+      call mark_diag( soln%LHS(:,:,i,4), 4000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+      call mark_diag( soln%LHS(:,:,i,5), 5000.0_prec + real(i,prec) )
+    !------------------------------ Row 2 -------------------------------------
+    i = i_low+1
+      !soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+      call mark_diag( soln%LHS(:,:,i,2), 2000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      call mark_diag( soln%LHS(:,:,i,3), 3000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+      call mark_diag( soln%LHS(:,:,i,4), 4000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+      call mark_diag( soln%LHS(:,:,i,5), 5000.0_prec + real(i,prec) )
+    !------------------------------ Rows 3:N-2 --------------------------------
+    do i = i_low+2,i_high-2
+      !soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+      call mark_diag( soln%LHS(:,:,i,1), 1000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,2) = tmp                       ! dRdu_(i-1)
+      call mark_diag( soln%LHS(:,:,i,2), 2000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      call mark_diag( soln%LHS(:,:,i,3), 3000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+      call mark_diag( soln%LHS(:,:,i,4), 4000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,5) = tmp                        ! dRdu_(i+2)
+      call mark_diag( soln%LHS(:,:,i,5), 5000.0_prec + real(i,prec) )
+    end do
+    !------------------------------ Row N-1 -----------------------------------
+    i = i_high-1
+      !soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+      call mark_diag( soln%LHS(:,:,i,1), 1000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+      call mark_diag( soln%LHS(:,:,i,2), 2000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      call mark_diag( soln%LHS(:,:,i,3), 3000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,4) = tmp                        ! dRdu_(i+1)
+      call mark_diag( soln%LHS(:,:,i,4), 4000.0_prec + real(i,prec) )
+    !------------------------------ Row N -------------------------------------
+    i = i_high
+      !soln%LHS(:,:,i,1) = tmp                        ! dRdu_(i-2)
+      call mark_diag( soln%LHS(:,:,i,1), 1000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i-1)
+      call mark_diag( soln%LHS(:,:,i,2), 2000.0_prec + real(i,prec) )
+      !soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      call mark_diag( soln%LHS(:,:,i,3), 3000.0_prec + real(i,prec) )
+!stop
+      do j = 1,5
+        do i = i_low,i_high
+          do jj = 1,neq
+            do ii = 1,neq
+              write(*,*) soln%LHS(ii,jj,i,j)
+            end do
+          end do
+        end do
+      end do
+
+      stop
+
+  end subroutine build_LHS_test
+
 
   subroutine build_LHS_matrix(soln,grid)
     type(soln_t), intent(inout) :: soln
