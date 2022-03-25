@@ -5,9 +5,117 @@ module utilities
 
   implicit none
 
-  public :: newton_safe, hunt
+  public :: newton_safe, hunt, block_band2full, &
+          block_band2sparse1, block_band2sparse2
 
 contains
+
+  subroutine block_band2sparse2(A1,M1,M2,q,N)
+    real(prec), intent(in)  :: A1(q,q,N,M1+M2+1)
+    integer, intent(in) :: M1, M2, q, N
+    real(prec) :: val
+    integer :: MM, i, j, k, ii, jj, row, col
+    MM = M1 + M2 + 1    ! block bandwidth
+    do k = 1,N
+    do j = 1,MM
+    do ii = 1,q
+    do jj = 1,q
+    row = (k-1)*q + ii
+    col = (j-1)*q + jj
+    val = A1(ii,jj,k,j)
+    write(*,*) row, col, val
+    end do
+    end do
+    end do
+    end do
+  end subroutine block_band2sparse2
+
+  subroutine block_band2sparse1(A1,M1,M2,q,N)
+    real(prec), intent(in)  :: A1(q,q,N,M1+M2+1)
+    integer, intent(in) :: M1, M2, q, N
+    real(prec) :: val, A2(q,q,N,M1+M2+1)
+    integer :: L, MM, i, j, k, ii, jj, row, col
+
+    MM = M1 + M2 + 1    ! block bandwidth
+    A2 = A1
+    L = M1
+    do i = 1,M1
+      do j = M1+2-i,MM
+        A2(:,:,i,j-L)  = A1(:,:,i,j)
+      end do
+      L = L - 1
+      do j = MM-L,MM
+        A2(:,:,i,j) = zero
+      end do
+    end do
+    L = 0
+    do k = 1,N
+      if (k>M1+1) then
+      if (L<N) then
+        L = L + 1
+      end if
+      end if
+      do j = 1,min(MM,N-(k-M2-1))
+        do ii = 1,q
+          do jj = 1,q
+            ! row, column, value
+            row = (k-1)*q + ii
+            col = (L+j-1)*q + jj
+            val = A2(ii,jj,k,j)
+            write(*,*) row, col, val
+          end do
+        end do
+      end do
+    end do
+
+  end subroutine block_band2sparse1
+
+
+
+  subroutine block_band2full(A1,A2,M1,M2,q,N)
+    real(prec), intent(in)  :: A1(q,q,N,M1+M2+1)
+    real(prec), intent(out) :: A2(q*N,q*N)
+    integer, intent(in) :: M1, M2, q, N
+    integer :: MM, i, j, k, ii, jj, h
+
+    MM = M1 + M2 + 1    ! block bandwidth
+
+    A2 = zero
+
+    do ii = 1,N
+      h = (ii-1)*q
+      do j = 1,q
+        do i = 1,q
+          A2(h+i,h+j)  = A1(i,j,ii,M1+1)
+        end do
+      end do
+    end do
+
+    do jj = 1,M1
+      k = M1 + 1 - jj
+      do ii = M1+2-jj,N
+        h = (ii-1)*q
+        do j = 1,q
+          do i = 1,q
+            A2(h+i,(h-k*q)+j) = A1(i,j,ii,jj)
+          end do
+        end do
+      end do
+    end do
+
+    do jj= M1+2,MM
+      k = MM + 1 - jj
+      do ii = 1,N-k
+        h = (ii-1)*q
+        do j = 1,q
+          do i = 1,q
+            A2(h+i,(h+k*q)+j) = A1(i,j,ii,jj)
+          end do
+        end do
+      end do
+    end do
+
+  end subroutine block_band2full
 
   subroutine newton_safe( fun, dfun, guess, bnd_a1, bnd_b1, &
                                       tol, max_iter, x, err )
