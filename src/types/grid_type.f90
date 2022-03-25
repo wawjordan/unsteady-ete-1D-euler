@@ -53,11 +53,13 @@ module grid_type
     !  write(*,'(I3,3G12.4)') i, grid%xi(i), grid%xc(i), grid%dx(i)
     !end do
 
-    grid%Ai = one
-    grid%Ac = one
+    grid%Ai  = one
+    grid%Ac  = one
     grid%dAc = zero
 
   end subroutine allocate_grid
+
+! ==> Grid using specified node locations
 !  subroutine allocate_grid( grid, xi )
 !
 !    use set_constants, only : zero, one, half
