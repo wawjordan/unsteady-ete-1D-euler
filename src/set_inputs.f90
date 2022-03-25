@@ -46,8 +46,8 @@ module set_inputs
   integer :: res_save      = 10
   integer :: res_out       = 1000
   real(prec) :: eps_roe    = 0.1_prec
-  real(prec) :: epsM       = one
-  real(prec) :: kappaM     = one
+  real(prec) :: epsM       = zero
+  real(prec) :: kappaM     = -one
   logical :: limiter_freeze = .false.
   logical :: cons           = .true.
   real(prec), dimension(:,:), allocatable :: leftV, rightV, leftU, rightU
