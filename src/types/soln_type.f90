@@ -45,7 +45,7 @@ module soln_type
 
     type(soln_t), intent(inout) :: soln
 
-    allocate( soln%LHS( neq, neq, i_low:i_high, 5 ) )
+    allocate( soln%LHS( neq, neq, i_low:i_high, 3 ) ) ! 1st-order Jacobian
 
     allocate( soln%V(  neq,  ig_low:ig_high ), & ! primitive (cell)
               soln%U(  neq,  ig_low:ig_high ), & ! conserved (cell)
