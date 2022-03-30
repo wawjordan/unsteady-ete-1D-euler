@@ -39,22 +39,22 @@ module init_problem
   !    soln%V(2,:) = U_R(2)
   !    soln%V(3,:) = U_R(3)
   !  end where
-  !  soln%V(1,:) = one-0.1_prec*grid%xc**2
-  !  soln%V(2,:) = grid%xc**2-1
-  !  soln%V(3,:) = one-0.2_prec*grid%xc**2
-    do i = ig_low, ig_high
-      soln%V(1,i) = real(i,prec)
-      soln%V(2,i) = real(i,prec)
-      soln%V(3,i) = real(i,prec)
-    end do
-    do i = ig_low, ig_high
-      soln%U(1,i) = real(i,prec)
-      soln%U(2,i) = real(i,prec)
-      soln%U(3,i) = real(i,prec)
-    end do
+    soln%V(1,:) = one-0.1_prec*grid%xc**2
+    soln%V(2,:) = grid%xc**2-1
+    soln%V(3,:) = one-0.2_prec*grid%xc**2
+    !do i = ig_low, ig_high
+    !  soln%V(1,i) = real(i,prec)
+    !  soln%V(2,i) = real(i,prec)
+    !  soln%V(3,i) = real(i,prec)
+    !end do
+    !do i = ig_low, ig_high
+    !  soln%U(1,i) = real(i,prec)
+    !  soln%U(2,i) = real(i,prec)
+    !  soln%U(3,i) = real(i,prec)
+    !end do
 
-    !call prim2cons(soln%U,soln%V)
-    !call update_states( soln )
+    call prim2cons(soln%U,soln%V)
+    call update_states( soln )
 
 
   end subroutine initialize
