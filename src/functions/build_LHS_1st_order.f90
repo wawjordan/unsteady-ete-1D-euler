@@ -88,24 +88,6 @@ module build_LHS_1st_order
     UL = soln%U(:,i_low-1:i_high)
     UR = soln%U(:,i_low:i_high+1)
 
-    do i = i_low-1,i_high
-    write(*,*) i, soln%U(:,i)
-    end do
-    write(*,*)
-    do i = i_low,i_high+1
-    write(*,*) i, soln%U(:,i)
-    end do
-    write(*,*) 'MUSCL:'
-
-    do i = i_low-1,i_high
-    write(*,*) i, UL(:,i)
-    end do
-    write(*,*)
-    do i = i_low-1,i_high
-    write(*,*) i, UL(:,i)
-    end do
-    stop
-
     !==========================================================================
     !------------------------------ Row 1 -------------------------------------
     !==========================================================================
@@ -118,19 +100,22 @@ module build_LHS_1st_order
       soln%F(:,i-1) = FL0 + FR0                      ! f_(i-1/2)
       soln%F(:,i)   = FL1 + FR1                      ! f_(i+1/2)
 
-      DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
-      DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+      !DtmpL0 = grid%Ai(i-1)*soln%duduL(:,3,i-1)      ! A_(i-1/2)*duLdu_(i)
+      !DtmpR0 = grid%Ai(i-1)*soln%duduR(:,2,i-1)      ! A_(i-1/2)*duRdu_(i)
+      !DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
+      !DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
+      DtmpL0 = grid%Ai(i-1)        ! A_(i-1/2)*duLdu_(i)
+      DtmpR0 = grid%Ai(i-1)        ! A_(i-1/2)*duRdu_(i)
+      DtmpL1 = grid%Ai(i)          ! A_(i+1/2)*duLdu_(i)
+      DtmpR1 = grid%Ai(i)          ! A_(i+1/2)*duRdu_(i)
 
-      DtmpL1 = grid%Ai(i)*soln%duduL(:,2,i)          ! A_(i+1/2)*duLdu_(i)
-      DtmpR1 = grid%Ai(i)*soln%duduR(:,1,i)          ! A_(i+1/2)*duRdu_(i)
-
-      do jj = 1,3
+      do jj = 1,neq
         do ii = 1,neq
           tmp(ii,jj) = dfduL1(ii,jj)*DtmpL1(ii) + dfduR1(ii,jj)*DtmpR1(ii) &
                    - (dfduL0(ii,jj)*DtmpL0(ii) + dfduR0(ii,jj)*DtmpR0(ii))
         end do
       end do
-      soln%LHS(:,:,i,3) = tmp                        ! dRdu_(i)
+      soln%LHS(:,:,i,2) = tmp                        ! dRdu_(i)
       do ii = 1,neq
         write(*,*) (tmp(ii,jj),jj=1,3)
       end do
