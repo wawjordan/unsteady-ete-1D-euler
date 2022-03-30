@@ -83,7 +83,7 @@ module flux_jacobians
 
 
   subroutine calc_vl_dfdu(U,f,dfdu,mask)
-
+    ! Calculates 1D flux jacobian and flux for Van Leer flux
     real(prec), intent(in) :: U(neq)
     real(prec), intent(out) :: f(neq), dfdu(neq,neq)
     real(prec) :: f1(neq), dfdu1(neq,neq)
@@ -93,9 +93,9 @@ module flux_jacobians
     real(prec) :: U1, U2, U3
     real(prec) :: fa, fb, sub, sup
     real(prec) :: da1, da2, da3, db1, db2, db3
-    logical :: supL, supR
+    logical    :: supL, supR
 
-    pm = merge(one,-one,mask)
+    pm = merge(one,-one,mask) ! sign change for left vs right state
 
     U1 = U(1)
     U2 = U(2)
@@ -104,9 +104,10 @@ module flux_jacobians
     call cons2prim_1D(U1,U2,U3,rho,uvel,P)
     call speed_of_sound(P,rho,a)
 
-    M = uvel/a
-    M1 = M + pm
+    M = uvel/a    ! Mach number
+    M1 = M + pm   ! M +/- 1
 
+    ! temporary variables
     g1  = gamma - one
     gg1 = gamma*(gamma-one)
     gg2 = gamma**2 - one
@@ -123,33 +124,38 @@ module flux_jacobians
     f(2) = fa*fb/gamma
     f(3) = half/gg2*fa*fb**2
 
+    ! d/dU(fa)
     da1 = pm*( eighth*(M1**2)*U3*ggphi - fourth*U1*a*M1*(U2*U3)*isgg1*phi32)
     da2 = pm*(-eighth*(M1**2)*U2*ggphi +   half*U1*a*M1*(U1*U3)*isgg1*phi32)
     da3 = pm*( eighth*(M1**2)*U1*ggphi - fourth*U1*a*M1*(U1*U2)*isgg1*phi32)
 
+    ! d/dU(fb)
     db1 = pm/U1*(pm*(U3*ggphi - two*a) - g1*U2/U1 )
     db2 = pm/U1*(g1 - pm*U2*ggphi)
     db3 = ggphi
 
+    ! 1st column
     dfdu(1,1) = da1
     dfdu(2,1) = pm*(one/gamma)*(fb*da1 + fa*db1)
     dfdu(3,1) = (one/gg2)*(half*fb**2*da1 + fa*fb*db1)
 
+    ! 2nd column
     dfdu(1,2) = da2
     dfdu(2,2) = pm*(one/gamma)*(fb*da2 + fa*db2)
     dfdu(3,2) = (one/gg2)*(half*fb**2*da2 + fa*fb*db2)
 
+    ! 3rd column
     dfdu(1,3) = da3
     dfdu(2,3) = pm*(one/gamma)*(fb*da3 + fa*db3)
     dfdu(3,3) = (one/gg2)*(half*fb**2*da3 + fa*fb*db3)
 
-    call exact_flux_cons(U,f1)
-    call flux_jac_cons1D(U,dfdu1)
+    call exact_flux_cons(U,f1)    ! exact flux
+    call flux_jac_cons1D(U,dfdu1) ! exact flux jacobian
 
-    sub  = merge( one, zero, ( abs(M)<one ) )
-    supL = (M>=one).and.mask
-    supR = (M<=-one).and.(.not.mask)
-    sup  = merge( one, zero, ( supL.or.supR ) )
+    sub  = merge( one, zero, ( abs(M)<one ) )   ! subsonic?
+    supL = (M>=one).and.mask                    ! supersonic on left?
+    supR = (M<=-one).and.(.not.mask)            ! supersonic on right?
+    sup  = merge( one, zero, ( supL.or.supR ) ) ! supersonic?
 
     f = f*sub + f1*sup
     dfdu = dfdu*sub + dfdu1*sup
@@ -157,7 +163,7 @@ module flux_jacobians
   end subroutine calc_vl_dfdu
 
   subroutine flux_jac_cons1D(U,A)
-
+    ! Exact 1D flux jacobian in conserved variables
     real(prec), intent(in)  :: U(3)
     real(prec), intent(out) :: A(3,3)
 
@@ -174,7 +180,7 @@ module flux_jacobians
   end subroutine flux_jac_cons1D
 
   subroutine flux_jac_prim1D(V,A)
-
+    ! Exact 1D flux jacobian in primitive variables
     real(prec), intent(in)  :: V(3)
     real(prec), intent(out) :: A(3,3)
 
