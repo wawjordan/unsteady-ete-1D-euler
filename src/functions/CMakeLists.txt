@@ -2,6 +2,7 @@
 add_lib_sources(
      variable_conversion.f90
      residuals.f90
+		 build_LHS_1st_order.f90
      time_integration.f90
      solution_reconstruction.f90
      flux_calc.f90
@@ -13,6 +14,6 @@ add_lib_sources(
      q1d_problem.f90
      utilities.f90
      extrapolation.f90
-		 #block_matrix_operations.f90
+		 block_matrix_operations.f90
 		 tridiag_operations.f90
 )
