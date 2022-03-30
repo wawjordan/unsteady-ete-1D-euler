@@ -13,5 +13,6 @@ add_lib_sources(
      q1d_problem.f90
      utilities.f90
      extrapolation.f90
-     block_matrix_operations.f90
+		 #block_matrix_operations.f90
+		 tridiag_operations.f90
 )
