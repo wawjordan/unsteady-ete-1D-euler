@@ -14,7 +14,8 @@ program main_program
   use flux_calc, only : select_flux, flux_fun, calc_flux_1D
   use flux_jacobians, only : calc_vl_dfdu, flux_jac_cons1D
   use other_subroutines
-  use residuals, only : build_LHS_matrix, build_LHS_test, calc_residual
+  !use residuals, only : build_LHS_matrix, build_LHS_test, calc_residual
+  use build_LHS_1st_order, only : build_tridiag_test, build_LHS_matrix_1st_order
   use geometry, only : setup_geometry, teardown_geometry
   use init_problem, only : initialize
   use namelist, only : read_namelist
@@ -60,9 +61,9 @@ program main_program
   write(header_str1,*) " Iter  |   ||density||    |"// &
   & "   ||velocity||    |   ||pressure||    |"
   !call output_soln(grid,soln,ex_soln,0)
-
-  call build_LHS_test(soln)
-  !call build_LHS_matrix(soln,grid)
+  !call build_tridiag_test(soln)
+  !call build_LHS_test(soln)
+  call build_LHS_matrix_1st_order(soln,grid)
   stop
  ! call block_band2full(soln%LHS,A_out,2,2,3,11)
  ! do i = 1,imax*neq
