@@ -5,7 +5,7 @@ module tridiag_operations
 
   implicit none
 
-  public :: trivec, tprec
+  public :: trivec, tprec, trivec_alt, tprec_alt
 
 contains
 
@@ -52,6 +52,58 @@ contains
   !     tridiagonal matrices DA,DD,DC
   !
   ! **********************************************************************
+  subroutine trivec_alt(jj,neq,A)
+    implicit none
+    integer, intent(in) :: jj, neq
+    real(prec), intent(inout) :: A(jj,neq,neq,3)
+    integer :: j, k, l, m, mm
+
+    do j = 1,jj           ! 1 *********************************************** 1
+      do k = 1,neq-1      ! 2 ******************************************** 2  |
+        do l = k+1,neq    ! 3 ***************************************** 3  |  |
+          A(k,l,j,2) = A(k,l,j,2)/A(k,k,j,2)
+        ! dd(j,l,k) = dd(j,l,k)/dd(j,k,k) !                             |  |  |
+        end do            ! 3 continue ******************************** 3  |  |
+        do l = k+1,neq    ! 4 ***************************************** 4  |  |
+          do m = k+1,neq  ! 4 *************************************** 4 |  |  |
+            A(m,l,j,2) = A(m,l,j,2) - A(k,l,j,2)*A(m,k,j,2)
+          ! dd(j,l,m) = dd(j,l,m) - dd(j,l,k)*dd(j,k,m) !             | |  |  |
+          end do          ! 4 continue ****************************** 4 |  |  |
+        end do            ! 4 continue ******************************** 4  |  |
+      end do              ! 2 continue *********************************** 2  |
+      if (j /= jj) then   ! ================================================= |
+        do l = 1,neq-1    ! 5 ******************************************** 5  |
+          do m = l+1,neq  ! 5 ****************************************** 5 |  |
+            do mm = 1,neq ! 5 **************************************** 5 | |  |
+              A(mm,m,j,3) = A(mm,m,j,3) - A(l,m,j,2)*A(mm,l,j,3)
+            ! dc(j,m,mm) = dc(j,m,mm) - dd(j,m,l)*dc(j,l,mm) !         | | |  |
+            end do        ! 5 continue ******************************* 5 | |  |
+          end do          ! 5 continue ********************************* 5 |  |
+        end do            ! 5 continue *********************************** 5  |
+        do l = neq,1,-1   ! 6 ******************************************** 6  |
+          do mm = 1,neq   ! 7 ***************************************** 7  |  |
+            A(mm,l,j,3) = A(mm,l,j,3)/A(l,l,j,2)
+          ! dc(j,l,mm) = dc(j,l,mm)/dd(j,l,l) !                         |  |  |
+          end do          ! 7 continue (?) **************************** 7  |  |
+          do m = 1,l-1    ! 8 ***************************************** 8  |  |
+            do mm = 1,neq ! 8 *************************************** 8 |  |  |
+              A(mm,m,j,3) = A(mm,m,j,3) - A(l,m,j,2)*A(mm,l,j,3)
+            ! dc(j,m,mm) = dc(j,m,mm) - dd(j,m,l)*dc(j,l,mm) !        | |  |  |
+            end do        ! 8 continue ****************************** 8 |  |  |
+          end do          ! 8 continue ******************************** 8  |  |
+        end do            ! 6 continue *********************************** 6  |
+        do k = 1,neq      ! 9 ******************************************** 9  |
+          do l = 1,neq    ! 9 ****************************************** 9 |  |
+            do mm = 1,neq ! 9 **************************************** 9 | |  |
+              A(k,l,j+1,2) = A(k,l,j+1,2) - A(mm,l,j+1,1)*A(k,mm,j,3)
+            ! dd(j+1,l,k) = dd(j+1,l,k) - da(j+1,l,mm)*dc(j,mm,k) !    | | |  |
+            end do        ! 9 continue ******************************* 9 | |  |
+          end do          ! 9 continue ********************************* 9 |  |
+        end do            ! 9 continue *********************************** 9  |
+      endif               ! ================================================= |
+    end do                ! 1 continue ************************************** 1
+  end subroutine trivec_alt
+
   subroutine trivec(jj,neq,da,dd,dc)
     implicit none
     integer, intent(in) :: jj, neq
@@ -97,7 +149,6 @@ contains
       endif               ! ================================================= |
     end do                ! 1 continue ************************************** 1
   end subroutine trivec
-
 
 !  subroutine tprec(jj,neq,da,dd,dc,c)
 !
@@ -149,6 +200,61 @@ contains
 !      end
 
 
+  subroutine tprec_alt(jj,neq,A,c)
+    implicit none
+    integer :: jj
+    integer :: neq
+    integer :: i = -99
+    integer :: k = -99
+    integer :: l = -99
+    integer :: m = -99
+    real(prec) :: sum  = -99.9_prec
+    real(prec) :: A(neq,neq,jj,3)
+    real(prec) :: c(neq,jj)
+
+    do k = 1,jj           ! 1 *********************************************** 1
+      if (k /= 1) then    ! ================================================= |
+        do i = 1,neq      ! 2 ******************************************** 2  |
+          sum = A(1,i,k,1)*c(1,k-1)
+        ! sum = da(k,i,1)*c(k-1,1) !                                       |  |
+          do m = 2,neq    ! 22 **************************************** 22 |  |
+            sum = sum + A(m,i,k,1)*c(m,k-1)
+          ! sum = sum + da(k,i,m)*c(k-1,m) !                            |  |  |
+          end do          ! 22 continue ******************************* 22 |  |
+          c(i,k) = c(i,k) - sum
+        ! c(k,i) = c(k,i) - sum !                                          |  |
+        end do            ! 2 continue *********************************** 2  |
+      endif               ! ================================================= |
+ ! ----- forward solve                                                        |
+      do l = 1,neq-1      ! 4 ******************************************** 4  |
+        do m = l+1,neq    ! 4 ****************************************** 4 |  |
+          c(m,k) = c(m,k) - A(l,m,k,2)*c(l,k)
+        ! c(k,m) = c(k,m) - dd(k,m,l)*c(k,l) !                           | |  |
+        end do            ! 4 continue ********************************* 4 |  |
+      end do              ! 4 continue *********************************** 4  |
+ ! ----- back solve                                                           |
+      do l = neq,1,-1     ! 5 ******************************************** 5  |
+        c(l,k) = c(l,k)/A(l,l,k,2)
+      ! c(k,l) = c(k,l)/dd(k,l,l) !                                        |  |
+        do m = l-1,1,-1   ! 6 ***************************************** 6  |  |
+          c(m,k) = c(m,k) - A(l,m,k,2)*c(l,k)
+        ! c(k,m) = c(k,m) - dd(k,m,l)*c(k,l) !                          |  |  |
+        end do            ! 6 continue ******************************** 6  |  |
+      end do              ! 5 continue *********************************** 5  |
+    end do                ! 1 continue ************************************** 1
+    do k = jj-1,1,-1      ! 44 ********************************************* 44
+      do i = 1,neq        ! 44 ******************************************* 44 |
+        sum = A(1,i,k,3)*c(1,k+1)
+      ! sum = dc(k,i,1)*c(k+1,1) !                                          | |
+        do m = 2,neq      ! 54 **************************************** 54  | |
+          sum = sum + A(m,i,k,3)*c(m,k+1)
+        ! sum = sum + dc(k,i,m)*c(k+1,m) !                              |   | |
+        end do            ! 54 continue ******************************* 54  | |
+        c(i,k) = c(i,k) - sum
+      ! c(k,i) = c(k,i) - sum !                                             | |
+      end do              ! 44 continue ********************************** 44 |
+    end do                ! 44 continue ************************************ 44
+  end subroutine tprec_alt
   ! *******************************************************************
   !
   !     Subroutine TPREC is a non-vectorizable backsolve routine for
