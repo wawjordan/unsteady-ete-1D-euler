@@ -55,7 +55,7 @@ contains
   subroutine trivec_alt(jj,neq,A)
     implicit none
     integer, intent(in) :: jj, neq
-    real(prec), intent(inout) :: A(jj,neq,neq,3)
+    real(prec), intent(inout) :: A(neq,neq,jj,3)
     integer :: j, k, l, m, mm
 
     do j = 1,jj           ! 1 *********************************************** 1
