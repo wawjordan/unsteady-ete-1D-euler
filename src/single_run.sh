@@ -20,9 +20,9 @@ eps_roe=0.1
 eps_MUSCL=1.0
 kappa_MUSCL=-1.0
 maxk=5
-Sout=16
+Sout=1
 Rout=1
-disp_out=100
+disp_out=1
 cons=F
 if [ $flux -eq 1 ]; then
   flux_str="van Leer flux"
