@@ -7,6 +7,7 @@ module time_integration
   use soln_type, only : soln_t
   use variable_conversion
   use residuals, only : calc_residual
+  use build_LHS_1st_order, only : build_LHS_matrix_1st_order
 
   implicit none
 
@@ -78,6 +79,65 @@ module time_integration
 
 
   subroutine implicit_euler(grid,soln)
+    use tridiag_operations, only : trivec_alt, tprec_alt
+    use flux_calc, only : calc_flux_1D
+    type(grid_t), intent(inout) :: grid
+    type(soln_t), intent(inout) :: soln
+    integer :: N
+    !real(prec), allocatable :: du(:,:)
+    real(prec), allocatable :: AL(:,:,:,:), du(:,:)
+    real(prec) :: d
+    integer :: i, j, ii, jj
+
+    N = i_high - i_low + 1
+
+    !allocate( du(neq,N) )
+    allocate( AL(neq,neq,N,3), du(neq,N) )
+
+    call prim2cons(soln%U,soln%V)
+    !call calc_flux_1D(grid,soln)
+    call calc_residual(grid,soln)
+    call build_LHS_matrix_1st_order(soln,grid)
+    AL = soln%LHS
+    do i = i_low, i_high
+      do j = 1,neq
+      AL(j,j,i,2) = AL(j,j,i,2) + &
+          ( grid%Ac(i)*grid%dx(i)/soln%dt(i) )
+      end do
+    end do
+
+    !do j = 1,3
+    !  do i = i_low, i_high
+    !    do jj = 1,neq
+    !      do ii = 1,neq
+    !        write(*,*) AL(ii,jj,i,j)
+    !      end do
+    !    end do
+    !  end do
+    !end do
+    !stop
+
+    du = -soln%R(:,:)
+
+    do i = i_low,i_high
+      do j = 1,neq
+        write(*,*) du(j,i)
+      end do
+    end do
+    stop
+
+    call trivec_alt(N,neq,AL)
+    call tprec_alt(N,neq,AL,du)
+
+    do i = i_low, i_high
+      soln%U(:,i) = soln%U(:,i) + du(:,i)
+    end do
+
+    deallocate( AL, du )
+
+  end subroutine implicit_euler
+
+  subroutine implicit_euler_old(grid,soln)
     use block_matrix_operations, only : blk_bandec, blk_banbks
     use residuals, only : build_LHS_matrix
     use flux_calc, only : calc_flux_1D
@@ -117,7 +177,7 @@ module time_integration
 
     deallocate( AL, du )
 
-  end subroutine implicit_euler
+  end subroutine implicit_euler_old
 
   !============================= explicit_euler ==============================80
   !>
