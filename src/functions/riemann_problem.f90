@@ -27,7 +27,7 @@ subroutine pressure_function( pres, U_K, f_out )
 
     rho_K  = U_K(1)
     pres_K = U_K(3)
-    call speed_of_sound( pres_K, rho_K, avel_K)
+    avel_K = speed_of_sound(pres_K,rho_K)
 
     A_K = two/( (gamma + one)*rho_K )
     B_K = alpha*pres_K
@@ -52,7 +52,7 @@ subroutine pressure_function( pres, U_K, f_out )
 
     rho_K  = U_K(1)
     pres_K = U_K(3)
-    call speed_of_sound( pres_K, rho_K, avel_K )
+    avel_K = speed_of_sound(pres_K,rho_K)
 
     A_K = two/( (gamma + one)*rho_K )
     B_K = alpha*pres_K
@@ -81,8 +81,8 @@ subroutine pressure_function( pres, U_K, f_out )
     pres_L  = U_L(3)
     pres_R  = U_R(3)
 
-    call speed_of_sound(pres_L, rho_L, avel_L)
-    call speed_of_sound(pres_R, rho_R, avel_R)
+    avel_L = speed_of_sound(pres_L,rho_L)
+    avel_R = speed_of_sound(pres_R,rho_R)
 
     pmin = min(pres_L,pres_R)
     pmax = max(pres_L,pres_R)
@@ -215,8 +215,8 @@ subroutine pressure_function( pres, U_K, f_out )
 
     alpha = (gamma - one)/(gamma + one)
 
-    call speed_of_sound(pres_L,rho_L,avel_L)
-    call speed_of_sound(pres_R,rho_R,avel_R)
+    avel_L = speed_of_sound(pres_L,rho_L)
+    avel_R = speed_of_sound(pres_R,rho_R)
 
     shkvel_L = uvel_L - avel_L*sqrt( ( (gamma + one)/(two*gamma) )* &
                    (pStar/pres_L) + ( (gamma - one)/(two*gamma) ) )
@@ -339,8 +339,8 @@ subroutine pressure_function( pres, U_K, f_out )
 
     alpha = (gamma - one)/(gamma + one)
 
-    call speed_of_sound(pres_L,rho_L,avel_L)
-    call speed_of_sound(pres_R,rho_R,avel_R)
+    avel_L = speed_of_sound(pres_L,rho_L)
+    avel_R = speed_of_sound(pres_R,rho_R)
 
     shkvel_L = uvel_L - avel_L*sqrt( ( (gamma + one)/(two*gamma) )* &
                    (pStar/pres_L) + ( (gamma - one)/(two*gamma) ) )
