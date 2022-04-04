@@ -122,7 +122,7 @@ module flux_jacobians
     fb = pm*( g1*M*a + pm*two*a)
 
     f(1) = fa
-    f(2) = fa*fb/gamma
+    f(2) = pm*fa*fb/gamma
     f(3) = half/gg2*fa*fb**2
 
     ! d/dU(fa)
