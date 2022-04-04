@@ -103,7 +103,7 @@ module flux_jacobians
 
     call cons2prim_1D(U1,U2,U3,rho,uvel,P)
     !write(*,*) rho, uvel, P
-    call speed_of_sound(P,rho,a)
+    a = speed_of_sound(P,rho)
 
     M = uvel/a    ! Mach number
     M1 = M + pm   ! M +/- 1
