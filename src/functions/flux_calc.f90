@@ -141,14 +141,12 @@ end subroutine calc_flux_1D
     rhoL = left(1)
     uL   = left(2)
     pL   = left(3)
-    !call speed_of_sound(pL,rhoL,aL)
-    aL = speed_of_sound(pL,rhoL)
+    aL   = speed_of_sound(pL,rhoL)
 
     rhoR = right(1)
     uR   = right(2)
     pR   = right(3)
-    !call speed_of_sound(pR,rhoR,aR)
-    aR = speed_of_sound(pR,rhoR)
+    aR   = speed_of_sound(pR,rhoR)
 
     ML = uL/aL
     MR = uR/aR
@@ -201,14 +199,12 @@ end subroutine calc_flux_1D
     rhoL = left(1)
     uL   = left(2)
     pL   = left(3)
-    !call speed_of_sound(pL,rhoL,aL)
-    aL = speed_of_sound(pL,rhoL)
+    aL   = speed_of_sound(pL,rhoL)
 
     rhoR = right(1)
     uR   = right(2)
     pR   = right(3)
-    !call speed_of_sound(pR,rhoR,aR)
-    aR = speed_of_sound(pR,rhoR)
+    aR   = speed_of_sound(pR,rhoR)
 
     htL  = aL**2/(gamma-one) + half*uL**2
     htR  = aR**2/(gamma-one) + half*uR**2
