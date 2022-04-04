@@ -46,18 +46,15 @@ contains
 
     type(grid_t), intent(in)    :: grid
     type(soln_t), intent(inout) :: soln
-    real(prec), dimension(neq,i_low-1:i_high) :: left, right
+    real(prec), dimension(neq,i_low-1:i_high) :: Vleft, Vright, Uleft, Uright
     integer :: i
 
-    call MUSCL_extrap_lite(soln,Left,Right)
-    call cons2prim(Left,Left)
-    call cons2prim(Right,Right)
-
-    !call limit_primitives(Left)
-    !call limit_primitives(Right)
+    call MUSCL_extrap_lite(soln,Vleft,Vright)
+    call cons2prim(Uleft,Vleft)
+    call cons2prim(Uright,Vright)
 
     do i = i_low-1,i_high
-      call flux_fun(Left(:,i),Right(:,i),soln%F(:,i))
+      call flux_fun(Uleft(:,i),Uright(:,i),soln%F(:,i))
     end do
 
 end subroutine calc_flux_1D
@@ -99,10 +96,30 @@ end subroutine calc_flux_1D
 
   !============================== van_leer_flux ==============================80
   !>
-  !! Description:
+  !! Description: van Leer flux in conserved variables
   !<
   !===========================================================================80
   subroutine van_leer_flux(left, right, F)
+
+    real(prec), dimension(neq), intent(in)  :: left, right
+    real(prec), dimension(neq), intent(out) :: F
+    real(prec), dimension(neq) :: VL, VR
+
+    call cons2prim(left,VL)
+    call cons2prim(right,VR)
+
+    call van_leer_flux_prim(VL,VR,F)
+
+  end subroutine van_leer_flux
+
+
+
+  !============================ van_leer_flux_prim ===========================80
+  !>
+  !! Description: van Leer flux in primitive variables
+  !<
+  !===========================================================================80
+  subroutine van_leer_flux_prim(left, right, F)
 
     real(prec), dimension(neq), intent(in)  :: left, right
     real(prec), dimension(neq), intent(out) :: F
@@ -124,12 +141,14 @@ end subroutine calc_flux_1D
     rhoL = left(1)
     uL   = left(2)
     pL   = left(3)
-    call speed_of_sound(pL,rhoL,aL)
+    !call speed_of_sound(pL,rhoL,aL)
+    aL = speed_of_sound(pL,rhoL)
 
     rhoR = right(1)
     uR   = right(2)
     pR   = right(3)
-    call speed_of_sound(pR,rhoR,aR)
+    !call speed_of_sound(pR,rhoR,aR)
+    aR = speed_of_sound(pR,rhoR)
 
     ML = uL/aL
     MR = uR/aR
@@ -159,7 +178,7 @@ end subroutine calc_flux_1D
     F(2) = Fc2 + Fp
     F(3) = Fc3
 
-  end subroutine van_leer_flux
+  end subroutine van_leer_flux_prim
 
   !================================ roe_flux =================================80
   !>
@@ -182,12 +201,14 @@ end subroutine calc_flux_1D
     rhoL = left(1)
     uL   = left(2)
     pL   = left(3)
-    call speed_of_sound(pL,rhoL,aL)
+    !call speed_of_sound(pL,rhoL,aL)
+    aL = speed_of_sound(pL,rhoL)
 
     rhoR = right(1)
     uR   = right(2)
     pR   = right(3)
-    call speed_of_sound(pR,rhoR,aR)
+    !call speed_of_sound(pR,rhoR,aR)
+    aR = speed_of_sound(pR,rhoR)
 
     htL  = aL**2/(gamma-one) + half*uL**2
     htR  = aR**2/(gamma-one) + half*uR**2
