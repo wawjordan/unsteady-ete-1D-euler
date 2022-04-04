@@ -5,8 +5,8 @@ module utilities
 
   implicit none
 
-  public :: newton_safe, hunt, block_band2full, &
-          block_band2sparse1, block_band2sparse2
+  public :: newton_safe, hunt!, block_band2full, &
+          !block_band2sparse1, block_band2sparse2
 
 contains
 
