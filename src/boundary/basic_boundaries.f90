@@ -166,8 +166,7 @@ contains
     uvel = soln%V(2,i_low)
     pres = soln%V(3,i_low)
     avel = soln%asnd(i_low)
-
-    call speed_of_sound(Vspec(3),rho,aspec)
+    aspec = speed_of_sound(Vspec(3),rho)
 
     ! left subsonic outflow
     Rm_ghost = riemann_3(rho,uvel,aspec)
@@ -207,7 +206,7 @@ contains
     uvel = soln%V(2,i_high)
     pres = soln%V(3,i_high)
     avel = soln%asnd(i_high)
-    call speed_of_sound(Vspec(3),rho,aspec)
+    aspec = speed_of_sound(Vspec(3),rho)
 
     ! right subsonic outflow
     if (flag.eqv..false.) then
@@ -250,7 +249,7 @@ contains
     rho  = Vspec(1)
     uvel = Vspec(2)
     pres = Vspec(3)
-    call speed_of_sound(pres,rho,avel)
+    avel = speed_of_sound(pres,rho)
 
     ! left supersonic inflow
     R0_ghost = riemann_1(rho,pres)
@@ -276,7 +275,7 @@ contains
     rho  = Vspec(1)
     uvel = Vspec(2)
     pres = Vspec(3)
-    call speed_of_sound(pres,rho,avel)
+    avel = speed_of_sound(pres,rho)
 
     ! left supersonic inflow
     R0_ghost = riemann_1(rho,pres)
@@ -303,7 +302,7 @@ contains
     rho  = Vspec(1)
     uvel = Vspec(2)
     pres = Vspec(3)
-    call speed_of_sound(pres,rho,avel)
+    avel = speed_of_sound(pres,rho)
 
     ! left supersonic outflow
     tmp1(1)  = riemann_1(soln%V(1,i_low),&
@@ -350,7 +349,7 @@ contains
     rho  = Vspec(1)
     uvel = Vspec(2)
     pres = Vspec(3)
-    call speed_of_sound(pres,rho,avel)
+    avel = speed_of_sound(pres,rho)
 
     ! left supersonic inflow
     tmp1(1)  = riemann_1(soln%V(1,i_high),&
