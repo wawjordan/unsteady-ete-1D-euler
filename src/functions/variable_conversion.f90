@@ -15,7 +15,135 @@ module variable_conversion
             prim2cons, cons2prim, limit_primitives,     &
             isentropic_relations, cons2prim_1D
 
+  interface cons2prim
+    module procedure cons2prim_scalar
+    module procedure cons2prim_array
+  end interface
+
+  interface prim2cons
+    module procedure prim2cons_scalar
+    module procedure prim2cons_array
+  end interface
+
+  interface update_mach
+    module procedure update_mach_scalar
+    module procedure update_mach_array
+  end interface
+
   contains
+
+  !============================== speed_of_sound  ============================80
+  !>
+  !! Description:
+  !<
+  !===========================================================================80
+!  elemental subroutine speed_of_sound( pressure, rho, sound_speed )
+!
+!    real(prec), intent(in)  :: pressure, rho
+!    real(prec), intent(out) :: sound_speed
+!
+!    sound_speed = sqrt(gamma*pressure/rho)
+!
+!  end subroutine speed_of_sound
+  elemental function speed_of_sound( pressure, rho )
+
+    real(prec) :: speed_of_sound
+    real(prec), intent(in) :: pressure, rho
+
+    speed_of_sound = sqrt(gamma*pressure/rho)
+
+  end function speed_of_sound
+
+  !=============================== cons2prim =================================80
+  !>
+  !! Description:
+  !<
+  !===========================================================================80
+  subroutine cons2prim_scalar( U, V )
+
+    real(prec), dimension(:), intent(in) :: U
+    real(prec), dimension(:), intent(out) :: V
+
+    V(1) = U(1)
+    V(2) = U(2)/U(1)
+    V(3) = (gamma - one)*U(3) - half*(gamma - one)*U(2)**2/U(1)
+
+  end subroutine cons2prim_scalar
+  subroutine cons2prim_array( U, V )
+
+    real(prec), dimension(:,:), intent(in) :: U
+    real(prec), dimension(:,:), intent(out) :: V
+
+    V(1,:) = U(1,:)
+    V(2,:) = U(2,:)/U(1,:)
+    V(3,:) = (gamma - one)*U(3,:) - half*(gamma - one)*U(2,:)**2/U(1,:)
+
+  end subroutine cons2prim_array
+  elemental subroutine cons2prim_1D( U1, U2, U3, V1, V2, V3 )
+    real(prec), intent(in)  :: U1, U2, U3
+    real(prec), intent(out) :: V1, V2, V3
+
+    V1 = U1
+    V2 = U2/U1
+    V3 = (gamma - one)*U3 - half*(gamma - one)*U2**2/U1
+  end subroutine cons2prim_1D
+
+  !=============================== prim2cons =================================80
+  !>
+  !! Description:
+  !<
+  !===========================================================================80
+  subroutine prim2cons_scalar( U, V )
+
+    real(prec), dimension(:), intent(out)  :: U
+    real(prec), dimension(:), intent(in)   :: V
+
+    U(1) = V(1)
+    U(2) = V(1)*V(2)
+    U(3) = ( V(3)/(gamma - one) ) + half*V(1)*V(2)**2
+
+  end subroutine prim2cons_scalar
+  subroutine prim2cons_array( U, V )
+
+    real(prec), dimension(:,:), intent(out)  :: U
+    real(prec), dimension(:,:), intent(in)   :: V
+
+    U(1,:) = V(1,:)
+    U(2,:) = V(1,:)*V(2,:)
+    U(3,:) = ( V(3,:)/(gamma - one) ) + half*V(1,:)*V(2,:)**2
+
+  end subroutine prim2cons_array
+  elemental subroutine prim2cons_1D( U1, U2, U3, V1, V2, V3 )
+    real(prec), intent(out) :: U1, U2, U3
+    real(prec), intent(in)  :: V1, V2, V3
+
+    U1 = V1
+    U2 = V1*V2
+    U3 = ( V3/(gamma - one) ) + half*V1*V2**2
+  end subroutine prim2cons_1D
+
+  !================================ update_mach ==============================80
+  !>
+  !! Description:
+  !<
+  !===========================================================================80
+  subroutine update_mach_scalar( V, M )
+
+    real(prec), dimension(:),  intent(in)    :: V
+    real(prec),                intent(inout) :: M
+
+    M = abs(V(2))/speed_of_sound(V(3),V(1))
+
+  end subroutine update_mach_scalar
+  subroutine update_mach_array( V, M )
+
+    real(prec), dimension(:,:),  intent(in) :: V
+    real(prec), dimension(:), intent(inout) :: M
+
+    M = abs(V(2,:))/speed_of_sound(V(3,:),V(1,:))
+
+  end subroutine update_mach_array
+
 
   elemental function riemann_1(rho, pres)
     real(prec) :: riemann_1
@@ -45,8 +173,6 @@ module variable_conversion
     pres = rho*avel**2/gamma
   end subroutine riem2prim
 
-
-
   !============================== update_states  =============================80
   !>
   !! Description:
@@ -57,97 +183,16 @@ module variable_conversion
     type(soln_t) :: soln
     call cons2prim(soln%U,soln%V)
     call limit_primitives(soln%V)
-    call speed_of_sound(soln%V(3,:),soln%V(1,:),soln%asnd)
+    soln%asnd = speed_of_sound(soln%V(3,:),soln%V(1,:))
 
     soln%mach = abs(soln%V(2,:))/soln%asnd
     soln%temp = T0/(one + half*(gamma - one)*soln%mach**2)
 
   end subroutine update_states
 
-  !============================== speed_of_sound  ============================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  elemental subroutine speed_of_sound( pressure, rho, sound_speed )
-
-    real(prec), intent(in)  :: pressure, rho
-    real(prec), intent(out) :: sound_speed
-
-    sound_speed = sqrt(gamma*pressure/rho)
-
-  end subroutine speed_of_sound
-
-  !=============================== prim2cons =================================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  subroutine prim2cons( U, V )
-
-    real(prec), dimension(:,:), intent(out)  :: U
-    real(prec), dimension(:,:), intent(in)   :: V
-
-    U(1,:) = V(1,:)
-    U(2,:) = V(1,:)*V(2,:)
-    U(3,:) = ( V(3,:)/(gamma - one) ) + half*V(1,:)*V(2,:)**2
-
-  end subroutine prim2cons
-
-  elemental subroutine prim2cons_1D( U1, U2, U3, V1, V2, V3 )
-    real(prec), intent(out) :: U1, U2, U3
-    real(prec), intent(in)  :: V1, V2, V3
-
-    U1 = V1
-    U2 = V1*V2
-    U3 = ( V3/(gamma - one) ) + half*V1*V2**2
-  end subroutine prim2cons_1D
-
-  !================================ update_mach ==============================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  subroutine update_mach( V, M )
-
-    real(prec), dimension(:,:),  intent(in) :: V
-    real(prec), dimension(:), intent(inout) :: M
-
-    real(prec), dimension(lbound(V,2):ubound(V,2)) :: a
-
-    call speed_of_sound(V(3,:),V(1,:),a)
-
-    M = abs(V(2,:))/a
-
-  end subroutine update_mach
-
-  !=============================== cons2prim =================================80
-  !>
-  !! Description:
-  !<
-  !===========================================================================80
-  subroutine cons2prim( U, V )
-
-    real(prec), dimension(:,:), intent(in) :: U
-    real(prec), dimension(:,:), intent(out) :: V
-
-    V(1,:) = U(1,:)
-    V(2,:) = U(2,:)/U(1,:)
-    V(3,:) = (gamma - one)*U(3,:) - half*(gamma - one)*U(2,:)**2/U(1,:)
-
-    !call limit_primitives(U,V)
-
-  end subroutine cons2prim
 
 
-  elemental subroutine cons2prim_1D( U1, U2, U3, V1, V2, V3 )
-    real(prec), intent(in)  :: U1, U2, U3
-    real(prec), intent(out) :: V1, V2, V3
 
-    V1 = U1
-    V2 = U2/U1
-    V3 = (gamma - one)*U3 - half*(gamma - one)*U2**2/U1
-  end subroutine cons2prim_1D
   !========================= limit_primitives ================================80
   !>
   !! Description:
@@ -198,7 +243,7 @@ module variable_conversion
 
     V(3,:) = 1000.0_prec*p0/(one + half*(gamma - one)*M**2)**(gamma/(gamma-1))
     V(1,:) = V(3,:)/(R_gas*T)
-    call speed_of_sound(V(3,:),V(1,:),a)
+    a = speed_of_sound(V(3,:),V(1,:))
     V(2,:) = M*a
 
   end subroutine isentropic_relations
