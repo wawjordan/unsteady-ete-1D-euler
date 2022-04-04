@@ -100,7 +100,7 @@ program main_program
     call implicit_euler(grid,soln)
     soln%time = soln%time + minval(soln%dt)
     !call sample_exact_soln(ex_soln,grid,soln%time)
-   if (mod(j,soln_save)==0) then
+    if (mod(j,soln_save)==0) then
       call calc_de( soln, ex_soln, soln%DE, soln%DEnorm, pnorm, cons )
       call output_soln(grid,soln,ex_soln,j)
     end if
