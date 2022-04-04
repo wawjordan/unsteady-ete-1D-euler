@@ -27,15 +27,14 @@ module time_integration
     use set_inputs,          only : CFL
 
     real(prec), dimension(neq,ig_low:ig_high), intent(in)  :: V
-    real(prec), dimension(ig_low:ig_high), intent(in)  :: dx
-    real(prec), dimension(ig_low:ig_high),   intent(out) :: lambda
-    real(prec), dimension(i_low:i_high),   intent(out) :: dt
-
-    real(prec), dimension(ig_low:ig_high), intent(in)    :: asnd
+    real(prec), dimension(ig_low:ig_high),     intent(in)  :: dx
+    real(prec), dimension(ig_low:ig_high),     intent(out) :: lambda
+    real(prec), dimension(i_low:i_high),       intent(out) :: dt
+    real(prec), dimension(ig_low:ig_high),     intent(in)  :: asnd
 
     lambda(:) = abs(V(2,:)) + asnd
     dt(:) = CFL*dx(i_low:i_high)/lambda(i_low:i_high)
-    dt(:) = minval(dt)
+    !dt(:) = minval(dt)
 
   end subroutine calc_time_step
 
@@ -137,47 +136,47 @@ module time_integration
 
   end subroutine implicit_euler
 
-  subroutine implicit_euler_old(grid,soln)
-    use block_matrix_operations, only : blk_bandec, blk_banbks
-    use residuals, only : build_LHS_matrix
-    use flux_calc, only : calc_flux_1D
-    type(grid_t), intent(inout) :: grid
-    type(soln_t), intent(inout) :: soln
-    integer :: M1, M2, MP, MPL, N, NP, q
-    integer :: indx(1:i_high-i_low+1)
-    real(prec), allocatable :: AL(:,:,:,:), du(:,:)
-    real(prec) :: d
-    integer :: i
-
-    M1 = 2
-    M2 = 2
-    MP = M1 + M2 + 1
-    MPL = M1
-    N = i_high - i_low + 1
-    NP = N
-    q = neq
-
-    allocate( AL(q,q,N,M1), du(q,N) )
-
-    !call prim2cons(soln%U,soln%V)
-    call calc_flux_1D(grid,soln)
-    call calc_residual(grid,soln)
-    call build_LHS_matrix(soln,grid)
-
-    AL = zero
-    du = -soln%R(:,:)
-
-    call blk_bandec(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,d)
-
-    call blk_banbks(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,du)
-
-    do i = i_low, i_high
-      soln%U(:,i) = soln%U(:,i) + du(:,i)
-    end do
-
-    deallocate( AL, du )
-
-  end subroutine implicit_euler_old
+!  subroutine implicit_euler_old(grid,soln)
+!    use block_matrix_operations, only : blk_bandec, blk_banbks
+!    use residuals, only : build_LHS_matrix
+!    use flux_calc, only : calc_flux_1D
+!    type(grid_t), intent(inout) :: grid
+!    type(soln_t), intent(inout) :: soln
+!    integer :: M1, M2, MP, MPL, N, NP, q
+!    integer :: indx(1:i_high-i_low+1)
+!    real(prec), allocatable :: AL(:,:,:,:), du(:,:)
+!    real(prec) :: d
+!    integer :: i
+!
+!    M1 = 2
+!    M2 = 2
+!    MP = M1 + M2 + 1
+!    MPL = M1
+!    N = i_high - i_low + 1
+!    NP = N
+!    q = neq
+!
+!    allocate( AL(q,q,N,M1), du(q,N) )
+!
+!    !call prim2cons(soln%U,soln%V)
+!    call calc_flux_1D(grid,soln)
+!    call calc_residual(grid,soln)
+!    call build_LHS_matrix(soln,grid)
+!
+!    AL = zero
+!    du = -soln%R(:,:)
+!
+!    call blk_bandec(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,d)
+!
+!    call blk_banbks(soln%LHS,N,q,M1,M2,NP,MP,AL,MPL,indx,du)
+!
+!    do i = i_low, i_high
+!      soln%U(:,i) = soln%U(:,i) + du(:,i)
+!    end do
+!
+!    deallocate( AL, du )
+!
+!  end subroutine implicit_euler_old
 
   !============================= explicit_euler ==============================80
   !>
