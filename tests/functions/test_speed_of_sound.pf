@@ -20,7 +20,7 @@ module test_speed_of_sound
       rho        = 1.225_prec
       a_expected = 340.29399054347107_prec
       
-      call speed_of_sound(pressure,rho,a)
+      a = speed_of_sound(pressure,rho)
       
       write(*,*)
       write(*,*) 'a        = ', a
