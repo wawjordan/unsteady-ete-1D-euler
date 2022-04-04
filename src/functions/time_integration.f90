@@ -124,7 +124,7 @@ module time_integration
         write(*,*) du(j,i)
       end do
     end do
-    stop
+    !stop
 
     call trivec_alt(N,neq,AL)
     call tprec_alt(N,neq,AL,du)
