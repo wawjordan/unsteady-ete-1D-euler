@@ -17,8 +17,8 @@ module test_calc_time_step
       
       real(prec), dimension(2) :: dt_expected
       real(prec), dimension(2)   :: lambda_expected
-      real(prec), dimension(2,3) :: V
-      real(prec) :: dx
+      real(prec), dimension(3,2) :: V
+      real(prec), dimension(2)   :: dx
       real(prec), dimension(2) :: dt, lambda, asnd
       
       i_low = 1
@@ -28,12 +28,12 @@ module test_calc_time_step
       CFL = 1.0_prec
       dx     = 0.066666666666667_prec
       V(1,1) = 1.225_prec
-      V(1,2) = 340.29399054347107_prec
-      V(1,3) = 101325.0_prec
+      V(2,1) = 340.29399054347107_prec
+      V(3,1) = 101325.0_prec
       
-      V(2,1) = 1.225_prec
+      V(1,2) = 1.225_prec
       V(2,2) = 0.0_prec
-      V(2,3) = 101325.0_prec
+      V(3,2) = 101325.0_prec
       
       asnd(1) = 340.29399054347107_prec
       asnd(2) = 340.29399054347107_prec
