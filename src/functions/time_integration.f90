@@ -34,7 +34,7 @@ module time_integration
 
     lambda(:) = abs(V(2,:)) + asnd
     dt(:) = CFL*dx(i_low:i_high)/lambda(i_low:i_high)
-    !dt(:) = minval(dt)
+    dt(:) = minval(dt)
 
   end subroutine calc_time_step
 
@@ -78,6 +78,7 @@ module time_integration
 
 
   subroutine implicit_euler(grid,soln)
+    use dispmodule
     use tridiag_operations, only : trivec_alt, tprec_alt
     use flux_calc, only : calc_flux_1D
     type(grid_t), intent(inout) :: grid
@@ -103,6 +104,7 @@ module time_integration
       AL(j,j,i,2) = AL(j,j,i,2) + &
           ( grid%Ac(i)*grid%dx(i)/soln%dt(i) )
       end do
+      !call disp('AL = ',AL(:,:,i,2))
     end do
 
     !do j = 1,3
@@ -118,11 +120,11 @@ module time_integration
 
     du = -soln%R(:,:)
 
-    do i = i_low,i_high
-      do j = 1,neq
-        write(*,*) du(j,i)
-      end do
-    end do
+    !do i = i_low,i_high
+    !  do j = 1,neq
+    !    write(*,*) du(j,i)
+    !  end do
+    !end do
     !stop
 
     call trivec_alt(N,neq,AL)
@@ -130,6 +132,7 @@ module time_integration
 
     do i = i_low, i_high
       soln%U(:,i) = soln%U(:,i) + du(:,i)
+      !call disp(soln%U(:,i))
     end do
 
     deallocate( AL, du )
