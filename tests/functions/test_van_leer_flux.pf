@@ -4,6 +4,7 @@ module test_van_leer_flux
   use fluid_constants, only : gamma
   use set_inputs, only : i_low, i_high, ig_low, ig_high
   use flux_calc, only : flux_fun, select_flux
+  use variable_conversion, only : prim2cons
   use pfunit_mod
 
   implicit none
@@ -13,103 +14,332 @@ module test_van_leer_flux
   contains
 
   @test
-    subroutine van_leer_flux_wall_test
-      
+    subroutine van_leer_flux_test_01
       use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
       
-      real(prec), dimension(3,0:2) :: U
-      real(prec), dimension(3,1) :: F_expected
-      real(prec), dimension(3,0:1) :: F
-      
+      VL = [ 1.0_prec, 0.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 0.0_prec, 1.0_prec ]
+      F_expected = [ 0.0_prec, 1.0_prec, 0.0_prec ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
       flux_scheme = 1
       call select_flux()
-      
-      i_low = 1
-      ig_low = 0
-      i_high = 1
-      ig_high = 2
-      
-      U(1,0) = 1.225_prec
-      U(2,0) = 0.0_prec
-      U(3,0) = 253312.5_prec
-
-      U(1,1) = 1.225_prec
-      U(2,1) = 0.0_prec
-      U(3,1) = 253312.5_prec
-      
-      U(1,2) = 1.225_prec
-      U(2,2) = 0.0_prec
-      U(3,2) = 253312.5_prec
-      
-      F_expected(1,1) = 0.0_prec
-      F_expected(2,1) = 101325.0_prec
-      F_expected(3,1) = 0.0_prec
-      
-      call flux_fun(U(:,0:1),U(:,1:2),F)
+      call flux_fun(UL,UR,F)
       
       write(*,*)
-      write(*,*) 'zero velocity test case (van Leer):'
-      write(*,*) 'F(1)     = ', F(1,0)
-      write(*,*) 'F_exp(1) = ', F_expected(1,1)
-      @assertequal(F_expected(1,1), F(1,0), toler)
-      write(*,*) 'F(2)     = ', F(2,0)
-      write(*,*) 'F_exp(2) = ', F_expected(2,1)
-      @assertequal(1.0_prec, F(2,0)/F_expected(2,1), toler)
-      write(*,*) 'F(3)     = ', F(3,0)
-      write(*,*) 'F_exp(3) = ', F_expected(3,1)
-      @assertequal(F_expected(3,1), F(3,0), toler)
-      write(*,*) 'toler    = ', toler
-      
-    end subroutine van_leer_flux_wall_test
-  
+      write(*,*) 'van Leer 01: 0 velocity, equal'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_01
   @test
-    subroutine van_leer_flux_supersonic_test
-      
+    subroutine van_leer_flux_test_02
       use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
       
-      real(prec), dimension(3,0:2) :: U
-      real(prec), dimension(3,1) :: F_expected
-      real(prec), dimension(3,0:1) :: F
-      
+      VL = [ 1.0_prec, 1.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 1.0_prec, 1.0_prec ]
+      F_expected = [ 1.0_prec, 2.0_prec, 4.0_prec ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
       flux_scheme = 1
       call select_flux()
+      call flux_fun(UL,UR,F)
       
-      i_low = 1
-      ig_low = 0
-      i_high = 1
-      ig_high = 2
-      
-      U(1,0) = 1.225_prec
-      U(2,0) = 510.6536695593_prec
-      U(3,0) = 917035.5796875_prec
-
-      U(1,1) = 1.225_prec
-      U(2,1) = 510.6536695593_prec
-      U(3,1) = 917035.5796875_prec
-      
-      U(1,2) = 1.225_prec
-      U(2,2) = 510.6536695593_prec
-      U(3,2) = 917035.5796875_prec
-      
-      F_expected(1,1) = 510.6536695593_prec
-      F_expected(2,1) = 537111.1593750_prec
-      F_expected(3,1) = 517438309.9606_prec
-
-      call flux_fun(U(:,0:1),U(:,1:2),F)
-
       write(*,*)
-      write(*,*) 'supersonic test case (van Leer):'
-      write(*,*) 'F(1)     = ', F(1,0)
-      write(*,*) 'F_exp(1) = ', F_expected(1,1)
-      @assertequal(1.0_prec, F(1,0)/F_expected(1,1), toler)
-      write(*,*) 'F(2)     = ', F(2,0)
-      write(*,*) 'F_exp(2) = ', F_expected(2,1)
-      @assertequal(1.0_prec, F(2,0)/F_expected(2,1), toler)
-      write(*,*) 'F(3)     = ', F(3,0)
-      write(*,*) 'F_exp(3) = ', F_expected(3,1)
-      @assertequal(1.0_prec, F(3,0)/F_expected(3,1), toler)
-      write(*,*) 'toler    = ', toler
+      write(*,*) 'van Leer 02: +subsonic, equal'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_02
+  @test
+    subroutine van_leer_flux_test_03
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
       
-    end subroutine van_leer_flux_supersonic_test
+      VL = [ 1.0_prec, -1.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -1.0_prec, 1.0_prec ]
+      F_expected = [ -1.0_prec, 2.0_prec, -4.0_prec ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 03: -subsonic, equal'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_03
+  @test
+    subroutine van_leer_flux_test_04
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, 2.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 2.0_prec, 1.0_prec ]
+      F_expected = [ 2.0_prec, 5.0_prec, 11.0_prec ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 04: +supersonic, equal'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_04
+  @test
+    subroutine van_leer_flux_test_05
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, -2.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -2.0_prec, 1.0_prec ]
+      F_expected = [ -2.0_prec, 5.0_prec, -11.0_prec ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 05: -supersonic, equal'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_05
+  @test
+    subroutine van_leer_flux_test_06
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, 1.1_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 1.0_prec, 1.0_prec ]
+     !F_expected = [ 1.094370598373247_prec, &
+     !               2.217948829328360_prec, &
+     !               4.504043796470167_prec  ]
+      F_expected = [ 1.094370598373247_prec, &
+                     2.217948829328361_prec, &
+                     4.493136024370076_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 06: +subsonic, higher velocity on left'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_06
+  @test
+    subroutine van_leer_flux_test_07
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, -1.1_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -1.0_prec, 1.0_prec ]
+     !F_expected = [-1.005629401626753_prec, &
+     !               1.992051170671639_prec, &
+     !              -4.011456203529833_prec  ]
+      F_expected = [-1.005629401626753_prec, &
+                     1.992051170671639_prec, &
+                    -4.022363975629923_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 07: -subsonic, higher velocity on left'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_07
+  @test
+    subroutine van_leer_flux_test_08
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, 1.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 1.1_prec, 1.0_prec ]
+     !F_expected = [ 1.005629401626753_prec, &
+     !               1.992051170671639_prec, &
+     !               4.011456203529833_prec  ]
+      F_expected = [ 1.005629401626753_prec, &
+                     1.992051170671639_prec, &
+                     4.022363975629923_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 08: +subsonic, higher velocity on right'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_08
+  @test
+    subroutine van_leer_flux_test_09
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, -1.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -1.1_prec, 1.0_prec ]
+     !F_expected = [-1.094370598373247_prec, &
+     !               2.217948829328360_prec, &
+     !              -4.504043796470167_prec  ]
+      F_expected = [-1.094370598373247_prec, &
+                     2.217948829328361_prec, &
+                    -4.493136024370076_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 09: -subsonic, higher velocity on right'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_09
+  @test
+    subroutine van_leer_flux_test_10
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, 2.1_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 2.0_prec, 1.0_prec ]
+     !F_expected = [ 2.100000000000000_prec, &
+     !               5.410000000000000_prec, &
+     !               11.980499999999999_prec  ]
+      F_expected = [ 2.100000000000000_prec, &
+                     5.410000000000000_prec, &
+                     11.980500000000001_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 10: +supersonic, higher velocity on left'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_10
+  @test
+    subroutine van_leer_flux_test_11
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, -2.1_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -2.0_prec, 1.0_prec ]
+     !F_expected = [-2.0_prec, &
+     !               5.0_prec, &
+     !              -11.0_prec  ]
+      F_expected = [-2.0_prec, &
+                     5.0_prec, &
+                    -11.0_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 11: -supersonic, higher velocity on left'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_11
+  @test
+    subroutine van_leer_flux_test_12
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, 2.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, 2.1_prec, 1.0_prec ]
+     !F_expected = [ 2.0_prec, &
+     !               5.0_prec, &
+     !               11.0_prec  ]
+      F_expected = [ 2.0_prec, &
+                     5.0_prec, &
+                     11.0_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 12: +supersonic, higher velocity on right'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_12
+  @test
+    subroutine van_leer_flux_test_13
+      use set_inputs, only : flux_scheme
+      real(prec), dimension(3) :: VL,VR, UL, UR
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      
+      VL = [ 1.0_prec, -2.0_prec, 1.0_prec ]
+      VR = [ 1.0_prec, -2.1_prec, 1.0_prec ]
+     !F_expected = [-2.100000000000000_prec, &
+     !               5.410000000000000_prec, &
+     !              -11.980499999999999_prec  ]
+      F_expected = [-2.100000000000000_prec, &
+                     5.410000000000000_prec, &
+                    -11.980500000000001_prec  ]
+
+      call prim2cons(UL,VL)
+      call prim2cons(UR,VR)
+      flux_scheme = 1
+      call select_flux()
+      call flux_fun(UL,UR,F)
+      
+      write(*,*)
+      write(*,*) 'van Leer 13: -supersonic, higher velocity on right'
+      call print_out(F,F_expected)
+    end subroutine van_leer_flux_test_13
+
+    subroutine print_out(F,F_expected)
+      real(prec), dimension(3) :: F_expected
+      real(prec), dimension(3) :: F
+      write(*,*) 'F(1)     = ', F(1)
+      write(*,*) 'F_exp(1) = ', F_expected(1)
+      @assertequal(F_expected(1), F(1), toler)
+      write(*,*) 'F(2)     = ', F(2)
+      write(*,*) 'F_exp(2) = ', F_expected(2)
+      @assertequal(1.0_prec, F(2)/F_expected(2), toler)
+      write(*,*) 'F(3)     = ', F(3)
+      write(*,*) 'F_exp(3) = ', F_expected(3)
+      @assertequal(F_expected(3), F(3), toler)
+      write(*,*) 'toler    = ', toler
+    end
 
 end module test_van_leer_flux
