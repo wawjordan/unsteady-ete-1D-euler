@@ -24,8 +24,13 @@ module residuals
 
     type(grid_t), intent(inout) :: grid
     type(soln_t), intent(inout) :: soln
-    integer :: i
+    integer :: i, j
 
+    !write(*,*)
+    !do i = i_low-1,i_high
+    !  write(*,*) i,(soln%F(j,i),j=1,neq)
+    !end do
+    !stop
     do i = i_low,i_high
       soln%R(:,i) = grid%Ai(i)*soln%F(:,i) &
                   - grid%Ai(i-1)*soln%F(:,i-1) &
