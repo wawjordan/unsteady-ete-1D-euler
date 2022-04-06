@@ -73,6 +73,10 @@ module variable_conversion
 
     real(prec), dimension(:,:), intent(in) :: U
     real(prec), dimension(:,:), intent(out) :: V
+    !integer :: i,j
+    !do i = lbound(U,2),ubound(U,2)
+    !  write(*,*) (U(j,i),j=1,neq)
+    !end do
 
     V(1,:) = U(1,:)
     V(2,:) = U(2,:)/U(1,:)
