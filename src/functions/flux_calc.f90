@@ -5,7 +5,8 @@ module flux_calc
   use fluid_constants, only : gamma
   use set_inputs, only : neq, i_low, i_high, ig_low, ig_high, eps_roe
   use set_inputs, only : n_ghost
-  use variable_conversion, only : cons2prim, speed_of_sound, limit_primitives
+  use variable_conversion, only : prim2cons, cons2prim, &
+                                  speed_of_sound, limit_primitives
   use solution_reconstruction, only : MUSCL_extrap, MUSCL_extrap_lite
   use soln_type, only : soln_t
   use grid_type, only : grid_t
@@ -47,15 +48,31 @@ contains
     type(grid_t), intent(in)    :: grid
     type(soln_t), intent(inout) :: soln
     real(prec), dimension(neq,i_low-1:i_high) :: Vleft, Vright, Uleft, Uright
-    integer :: i
+    integer :: i,j
 
+    do i = i_low-1, i_high
+       write(*,*) (soln%V(j,i),j=1,neq), ' | ', (soln%V(j,i+1),j=1,neq)
+    end do
+    write(*,*) 'MUSCL:'
     call MUSCL_extrap_lite(soln,Vleft,Vright)
-    call cons2prim(Uleft,Vleft)
-    call cons2prim(Uright,Vright)
+    do i = i_low-1, i_high
+       write(*,*) (Vleft(j,i),j=1,neq), ' | ', (VRight(j,i),j=1,neq)
+    end do
+    stop
+    call prim2cons(Uleft,Vleft)
+    call prim2cons(Uright,Vright)
+    !call cons2prim(Uleft,Vleft)
+    !call cons2prim(Uright,Vright)
+    do i = i_low-1, i_high
+       write(*,*) (Uleft(j,i),j=1,neq), ' | ', (URight(j,i),j=1,neq)
+    end do
+    stop
 
     do i = i_low-1,i_high
       call flux_fun(Uleft(:,i),Uright(:,i),soln%F(:,i))
+      !write(*,*) (soln%F(j,i),j=1,neq)
     end do
+    write(*,*)
 
 end subroutine calc_flux_1D
 
